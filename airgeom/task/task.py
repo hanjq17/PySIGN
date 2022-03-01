@@ -39,7 +39,7 @@ class Prediction(BaseTask):
 
     @property
     def params(self):
-        return self.decoder.parameters()
+        return self.parameters()
 
     def __call__(self, data):
         rep = self.rep(data)
