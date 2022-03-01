@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = 'AirGeom'
 copyright = '2022, AirGeom Team, Tsinghua University'
-author = 'Jiaqi Han, Rui Jiao, Wenbing Huang, Yang Liu'
+author = 'AirGeom Team'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0'
