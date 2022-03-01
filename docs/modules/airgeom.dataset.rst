@@ -1,21 +1,12 @@
-airgeom.dataset package
-=======================
+airgeom.dataset
+===============
 
-Submodules
-----------
 
-airgeom.dataset.dataset module
-------------------------------
+airgeom.dataset.dataset
+-----------------------
 
 .. automodule:: airgeom.dataset.dataset
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: airgeom.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,21 +1,12 @@
-airgeom.task package
-====================
+airgeom.task
+============
 
-Submodules
-----------
 
-airgeom.task.task module
-------------------------
+airgeom.task.task
+-----------------
 
 .. automodule:: airgeom.task.task
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: airgeom.task
-   :members:
-   :undoc-members:
-   :show-inheritance:

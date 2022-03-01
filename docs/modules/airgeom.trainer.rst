@@ -1,21 +1,12 @@
-airgeom.trainer package
-=======================
+airgeom.trainer
+===============
 
-Submodules
-----------
 
-airgeom.trainer.trainer module
-------------------------------
+airgeom.trainer.trainer
+-----------------------
 
 .. automodule:: airgeom.trainer.trainer
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: airgeom.trainer
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,21 +1,12 @@
-airgeom.data package
-====================
+airgeom.data
+============
 
-Submodules
-----------
 
-airgeom.data.data module
-------------------------
+airgeom.data.data
+-----------------
 
 .. automodule:: airgeom.data.data
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: airgeom.data
-   :members:
-   :undoc-members:
-   :show-inheritance:

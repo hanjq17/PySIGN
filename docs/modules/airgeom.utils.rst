@@ -1,45 +1,36 @@
-airgeom.utils package
-=====================
+airgeom.utils
+=============
 
-Submodules
-----------
 
-airgeom.utils.aggregation module
---------------------------------
+airgeom.utils.aggregation
+-------------------------
 
 .. automodule:: airgeom.utils.aggregation
    :members:
    :undoc-members:
    :show-inheritance:
 
-airgeom.utils.args module
--------------------------
+airgeom.utils.args
+------------------
 
 .. automodule:: airgeom.utils.args
    :members:
    :undoc-members:
    :show-inheritance:
 
-airgeom.utils.training module
------------------------------
+airgeom.utils.training
+----------------------
 
 .. automodule:: airgeom.utils.training
    :members:
    :undoc-members:
    :show-inheritance:
 
-airgeom.utils.transforms module
--------------------------------
+airgeom.utils.transforms
+------------------------
 
 .. automodule:: airgeom.utils.transforms
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: airgeom.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:

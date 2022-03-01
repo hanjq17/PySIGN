@@ -1,22 +1,14 @@
-airgeom package
-===============
+airgeom
+=======
 
-Subpackages
------------
 
 .. toctree::
    :maxdepth: 4
 
    airgeom.data
    airgeom.dataset
+   airgeom.nn
    airgeom.task
    airgeom.trainer
    airgeom.utils
 
-Module contents
----------------
-
-.. automodule:: airgeom
-   :members:
-   :undoc-members:
-   :show-inheritance:
