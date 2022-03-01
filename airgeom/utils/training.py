@@ -1,0 +1,111 @@
+from torch.optim import SGD, Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+import numpy as np
+import os
+import torch
+import random
+
+
+def get_optimizer(opt, lr, weight_decay, params):
+    if opt == 'SGD':
+        return SGD(lr=lr, weight_decay=weight_decay, params=params)
+    elif opt == 'Adam':
+        return Adam(lr=lr, weight_decay=weight_decay, params=params)
+    else:
+        raise NotImplementedError('Unknown optimizer', opt)
+
+
+def get_scheduler(scheduler, opt, args):
+    if scheduler == 'Plateau':
+        return ReduceLROnPlateau(optimizer=opt)
+    else:
+        raise NotImplementedError('Unknown scheduler', scheduler)
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+
+
+def to_numpy(stats):
+    # convert to numpy
+    for k in stats:
+        try:
+            stats[k] = stats[k].detach().cpu().numpy()
+        except:
+            pass
+    return stats
+
+
+class StatsCollector(object):
+    def __init__(self):
+        self.epoch = 0
+        self.step = 0
+        self.stats = {}
+
+    def update_step(self, stats):
+        # convert to numpy
+        stats = to_numpy(stats)
+        if self.epoch not in self.stats:
+            self.stats[self.epoch] = {}
+        self.stats[self.epoch][self.step] = stats
+        self.step += 1
+
+    def update_epoch(self, stats):
+        # convert to numpy
+        stats = to_numpy(stats)
+        self.stats[self.epoch]['info'] = stats
+        self.step = 0
+        self.epoch += 1
+
+    def get_train_loss(self):
+        all_train_loss = [self.stats[self.epoch][d]['train_loss'] for d in self.stats[self.epoch] if d != 'info']
+        return self.get_averaged_loss(all_train_loss)
+
+    @staticmethod
+    def get_averaged_loss(all_loss):
+        loss = np.concatenate(all_loss, axis=0).mean()
+        return loss
+
+
+class SavingHandler(object):
+    def __init__(self, model, save_path, lower_is_better=True, max_instances=3):
+        self.lower_is_better = lower_is_better
+        self.max_instances = max_instances
+        self.model = model
+        self.save_path = save_path
+        self.saved_models = []
+
+    def __call__(self, epoch, metric):
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+        if len(self.saved_models) >= self.max_instances:
+            # pop the worst model
+            os.remove(os.path.join(self.save_path, 'epoch_' + str(self.saved_models[0][0]) + '.pth'))
+            self.saved_models = self.saved_models[1:]
+        self.saved_models.append((epoch, metric))
+        save_name = os.path.join(self.save_path, 'epoch_' + str(epoch) + '.pth')
+        torch.save(self.model.state_dict(), save_name)
+
+
+class EarlyStopping(object):
+    def __init__(self, lower_is_better=True, max_times=10, verbose=True):
+        self.lower_is_better = lower_is_better
+        self.max_times = max_times
+        self.cur_best = np.inf if self.lower_is_better else - np.inf
+        self.counter = 0
+        self.verbose = verbose
+
+    def __call__(self, metric):
+        better = metric < self.cur_best if self.lower_is_better else metric > self.cur_best
+        if better:
+            self.counter = 0
+            self.cur_best = metric
+        else:
+            self.counter += 1
+            if self.verbose:
+                print('Early Stopping counter:', self.counter)
+        return better
+

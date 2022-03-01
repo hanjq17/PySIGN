@@ -1,0 +1,18 @@
+{
+        "exp_name": "QM9_EGNN",
+        "batch_size": 128,
+        "epoch": 300,
+        "seed": 1,
+        "lr": 0.0005,
+        "hidden_dim": 64,
+        "model": "EGNN",
+        "n_layers": 4,
+        "data_path": "cached_datasets",
+        "model_save_path": "saved_models",
+        "earlystopping": 10,
+        "weight_decay": 1e-10,
+        "optimizer": "SGD",
+        "scheduler": "Plateau",
+        "eval_epoch": 1,
+        "target": 0
+}
