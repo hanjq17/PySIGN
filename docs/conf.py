@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'AirGeom'
-copyright = '2022, Yang Liu'
-author = 'Yang Liu'
+copyright = '2022, AirGeom Team, Tsinghua University'
+author = 'Jiaqi Han, Rui Jiao, Wenbing Huang, Yang Liu'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0'
@@ -58,4 +58,3 @@ html_static_path = ['_static']
 add_module_names = False
 
 autosummary_generate = True
-templates_path = ['_templates']
