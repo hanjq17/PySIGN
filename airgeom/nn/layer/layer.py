@@ -6,10 +6,22 @@ from ...utils import unsorted_segment_sum, unsorted_segment_mean
 class E_GCL(nn.Module):
     """
     E(n) Equivariant Convolutional Layer
+
+    :param input_nf: Number of features for 'h' at the input
+    :param output_nf: Number of features for 'h' at the output
+    :param hidden_nf:  Number of hidden features
+    :param edges_in_d: Number of features for the edge features, defaults to 0
+    :param act_fn: Activation function, defaults to nn.SiLU()
+    :param residual: Whether using residual connection or not, defaults to True
+    :param attention: Whether using attention in edge model or not, defaults to False
+    :param normalize: Whether normalizing the coordinates messages , defaults to False
+    :param coords_agg: Message aggregation method for coordinates, defaults to 'mean'
+    :param tanh: Whether using tanh at the output of phi_x(m_ij) , defaults to False
     """
 
     def __init__(self, input_nf, output_nf, hidden_nf, edges_in_d=0, act_fn=nn.SiLU(), residual=True,
                  attention=False, normalize=False, coords_agg='mean', tanh=False):
+
         super(E_GCL, self).__init__()
         input_edge = input_nf * 2
         self.residual = residual
@@ -48,6 +60,7 @@ class E_GCL(nn.Module):
                 nn.Sigmoid())
 
     def edge_model(self, source, target, radial, edge_attr):
+
         if edge_attr is None:  # Unused.
             out = torch.cat([source, target, radial], dim=1)
         else:
