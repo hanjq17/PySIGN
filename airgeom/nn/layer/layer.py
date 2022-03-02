@@ -3,26 +3,26 @@ import torch
 from ...utils import unsorted_segment_sum, unsorted_segment_mean
 
 
-class E_GCL(nn.Module):
+class EGNNLayer(nn.Module):
     """
-    E(n) Equivariant Convolutional Layer
+    E(n)-equivariant Message Passing Layer
 
     :param input_nf: Number of features for 'h' at the input
     :param output_nf: Number of features for 'h' at the output
     :param hidden_nf:  Number of hidden features
-    :param edges_in_d: Number of features for the edge features, defaults to 0
-    :param act_fn: Activation function, defaults to nn.SiLU()
-    :param residual: Whether using residual connection or not, defaults to True
-    :param attention: Whether using attention in edge model or not, defaults to False
-    :param normalize: Whether normalizing the coordinates messages , defaults to False
-    :param coords_agg: Message aggregation method for coordinates, defaults to 'mean'
-    :param tanh: Whether using tanh at the output of phi_x(m_ij) , defaults to False
+    :param edges_in_d: Number of features for the edge features, default: 0
+    :param act_fn: Activation function, default: nn.SiLU()
+    :param residual: Whether using residual connection or not, default: True
+    :param attention: Whether using attention in edge model or not, default: False
+    :param normalize: Whether normalizing the coordinates messages , default: False
+    :param coords_agg: Message aggregation method for coordinates, default: 'mean'
+    :param tanh: Whether using tanh at the output of phi_x(m_ij) , default: False
     """
 
     def __init__(self, input_nf, output_nf, hidden_nf, edges_in_d=0, act_fn=nn.SiLU(), residual=True,
                  attention=False, normalize=False, coords_agg='mean', tanh=False):
 
-        super(E_GCL, self).__init__()
+        super(EGNNLayer, self).__init__()
         input_edge = input_nf * 2
         self.residual = residual
         self.attention = attention
@@ -60,6 +60,15 @@ class E_GCL(nn.Module):
                 nn.Sigmoid())
 
     def edge_model(self, source, target, radial, edge_attr):
+        """
+        The update of edge message.
+
+        :param source: The embedding of node :math:`i`, :math:`h_i`.
+        :param target: The embedding of node :math:`j`, :math:`h_j`.
+        :param radial: The redial scalar :math:`||x_i - x_j||^2`.
+        :param edge_attr: The edge feature :math:`e_{ij}`.
+        :return: The edge message.
+        """
 
         if edge_attr is None:  # Unused.
             out = torch.cat([source, target, radial], dim=1)
@@ -72,6 +81,15 @@ class E_GCL(nn.Module):
         return out
 
     def node_model(self, x, edge_index, edge_attr, node_attr):
+        """
+        The update of node embedding.
+
+        :param x: The input node embedding.
+        :param edge_index: The edge index.
+        :param edge_attr: The edge feature.
+        :param node_attr: The node attribute.
+        :return: The aggregated node embedding.
+        """
         row, col = edge_index
         agg = unsorted_segment_sum(edge_attr, row, num_segments=x.size(0))
         if node_attr is not None:
@@ -84,6 +102,15 @@ class E_GCL(nn.Module):
         return out, agg
 
     def coord_model(self, coord, edge_index, coord_diff, edge_feat):
+        """
+        The update of coordinate.
+
+        :param coord: The coordinate.
+        :param edge_index: The edge index.
+        :param coord_diff: The difference in coordinates :math:`x_i - x_j`.
+        :param edge_feat: The edge feature.
+        :return: The updated coordinates.
+        """
         row, col = edge_index
         trans = coord_diff * self.coord_mlp(edge_feat)
         if self.coords_agg == 'sum':
@@ -96,6 +123,13 @@ class E_GCL(nn.Module):
         return coord
 
     def coord2radial(self, edge_index, coord):
+        """
+        Compute the radial scalar.
+
+        :param edge_index: The edge index.
+        :param coord: The coordinate.
+        :return: The radial scalar :math:`||x_i - x_j||^2` and difference in coordinates :math:`x_i - x_j`.
+        """
         row, col = edge_index
         coord_diff = coord[row] - coord[col]
         radial = torch.sum(coord_diff**2, 1).unsqueeze(1)
@@ -107,6 +141,16 @@ class E_GCL(nn.Module):
         return radial, coord_diff
 
     def forward(self, h, edge_index, coord, edge_attr=None, node_attr=None):
+        """
+        The update of a layer.
+
+        :param h: The node embedding.
+        :param edge_index: The edge index.
+        :param coord: The coordinate :math:`x`.
+        :param edge_attr: The edge feature.
+        :param node_attr: The node feature.
+        :return: The updated node feature, coordinate and edge feature.
+        """
         row, col = edge_index
         radial, coord_diff = self.coord2radial(edge_index, coord)
 

@@ -1,3 +1,3 @@
-from .layer import E_GCL
+from .layer import EGNNLayer
 
-__all__ = ['E_GCL']
+__all__ = ['EGNNLayer']
