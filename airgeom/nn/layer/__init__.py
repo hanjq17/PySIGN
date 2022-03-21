@@ -1,3 +1,3 @@
-from .layer import EGNNLayer
+from .scalar import EGNNLayer
 
 __all__ = ['EGNNLayer']
