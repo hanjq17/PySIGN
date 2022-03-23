@@ -9,6 +9,7 @@ import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
 import torch
 
+torch.cuda.set_device(0)
 
 param_path = 'examples/configs/qm9_config.json'
 args = get_default_args()
