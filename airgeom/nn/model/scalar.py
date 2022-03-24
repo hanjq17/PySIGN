@@ -1,5 +1,6 @@
 import torch.nn as nn
-from ..layer import EGNNLayer
+import torch
+from ..layer import EGNNLayer, RadialFieldLayer
 
 __all__ = ['EGNN']
 
@@ -62,4 +63,45 @@ class EGNN(nn.Module):
         h = self.embedding_out(h)
         # TODO: discuss whether to put x and h back to data
         data.x, data.h = x, h
+        return data
+
+
+class RadialField(nn.Module):
+    def __init__(self, hidden_nf, edge_attr_nf=0, device='cpu', act_fn=nn.SiLU(), n_layers=4):
+        """
+        Radial Field Layer
+
+        :param hidden_nf: Number of hidden node features.
+        :param edge_attr_nf: Number of edge features, default: 0.
+        :param device: Device, default: 'cpu'.
+        :param act_fn: The activation function, default: nn.SiLU.
+        :param n_layers: The number of layers, default: 4.
+        """
+        super(RadialField, self).__init__()
+        self.hidden_nf = hidden_nf
+        self.device = device
+        self.n_layers = n_layers
+        for i in range(n_layers):
+            self.add_module("gcl_%d" % i, RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
+        self.to(self.device)
+
+    def forward(self, data):
+        """
+        Conduct Radial Field message passing on data. Radial Field does not update node feature, and thus
+        does not require node feature as input.
+
+        :param data: The data object, including coordinate, edge feature, edge index, etc.
+        :return: The updated data object.
+        """
+        x = data.pos
+        edges = data.edge_index
+        edge_attr = data.edge_attr
+        if 'v' in data.__dict__:
+            v = data.v
+        else:
+            v = torch.ones_like(x)
+        vel_norm = torch.sqrt(torch.sum(v ** 2, dim=1).unsqueeze(1))
+        for i in range(self.n_layers):
+            x, _ = self._modules["gcl_%d" % i](x, vel_norm, v, edges, edge_attr)
+        data.x = x
         return data

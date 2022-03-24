@@ -44,8 +44,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # rep_model = EGNN(in_node_nf=11, hidden_nf=args.hidden_dim, out_node_nf=args.hidden_dim, in_edge_nf=5, device=device,
 #                  n_layers=args.n_layers)
+# rep_model = RadialField(hidden_nf=args.hidden_dim, edge_attr_nf=5, device=device, n_layers=args.n_layers)
 rep_model = PaiNN(max_z = 11, n_atom_basis = args.hidden_dim, n_interactions = args.n_layers)
 # rep_model = EquivariantTransformer(max_z = 11, hidden_channels = args.hidden_dim, num_layers = args.n_layers)
+
 task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim)
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
