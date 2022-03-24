@@ -1,7 +1,7 @@
 import sys
 sys.path.append('./')
 from airgeom.dataset import QM9
-from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer
+from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField
 from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
 from airgeom.trainer import Trainer
 from airgeom.task import Prediction

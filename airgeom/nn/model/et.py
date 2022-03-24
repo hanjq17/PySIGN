@@ -19,7 +19,7 @@ class EquivariantTransformer(nn.Module):
         rbf_type (string, optional): The type of radial basis function to use.
             (default: :obj:`"expnorm"`)
         trainable_rbf (bool, optional): Whether to train RBF parameters with
-            backpropagation. (default: :obj:`True`)
+            back-propagation. (default: :obj:`True`)
         activation (string, optional): The type of activation function to use.
             (default: :obj:`"silu"`)
         attn_activation (string, optional): The type of activation function to use
@@ -137,6 +137,15 @@ class EquivariantTransformer(nn.Module):
             attn.reset_parameters()
         self.out_norm.reset_parameters()
 
+    @property
+    def params(self):
+        """
+        Get the parameters to optimize.
+
+        :return: The parameters to optimize.
+        """
+        return self.parameters()
+
     def forward(self, data):
         z = data.x
         x = self.embedding(z)
@@ -146,7 +155,7 @@ class EquivariantTransformer(nn.Module):
 
         mask = edge_index[0] != edge_index[1]
 
-        edge_weight = torch.where(mask, torch.norm(edge_vec,dim = -1), torch.zeros(edge_vec.size(0), device=edge_vec.device))
+        edge_weight = torch.where(mask, torch.norm(edge_vec, dim=-1), torch.zeros(edge_vec.size(0), device=edge_vec.device))
         
         edge_attr = self.cutoff_fn(edge_weight.unsqueeze(-1)) * self.distance_expansion(edge_weight)
         

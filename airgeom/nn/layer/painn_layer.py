@@ -14,7 +14,6 @@ class PaiNNInteraction(nn.Module):
         Args:
             n_atom_basis: number of features to describe atomic environments.
             activation: if None, no activation function is used.
-            epsilon: stability constant added in norm to prevent numerical instabilities
         """
         super(PaiNNInteraction, self).__init__()
         self.n_atom_basis = n_atom_basis
@@ -97,7 +96,7 @@ class PaiNNMixing(nn.Module):
         Returns:
             atom features after interaction
         """
-        ## intra-atomic
+        # intra-atomic
         mu_mix = self.mu_channel_mix(mu)
         mu_V, mu_W = torch.split(mu_mix, self.n_atom_basis, dim=-1)
         mu_Vn = torch.sqrt(torch.sum(mu_V ** 2, dim=-2, keepdim=True) + self.epsilon)

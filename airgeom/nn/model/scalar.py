@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 from ..layer import EGNNLayer, RadialFieldLayer
 
-__all__ = ['EGNN', 'RadialFieldLayer']
+__all__ = ['EGNN', 'RadialField']
 
 
 class EGNN(nn.Module):
@@ -79,6 +79,15 @@ class RadialField(nn.Module):
         self.n_layers = n_layers
         for i in range(n_layers):
             self.add_module("gcl_%d" % i, RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
+
+    @property
+    def params(self):
+        """
+        Get the parameters to optimize.
+
+        :return: The parameters to optimize.
+        """
+        return self.parameters()
 
     def forward(self, data):
         """
