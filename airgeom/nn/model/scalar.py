@@ -1,6 +1,7 @@
 import torch.nn as nn
 from ..layer import EGNNLayer
 
+__all__ = ['EGNN']
 
 class EGNN(nn.Module):
     """

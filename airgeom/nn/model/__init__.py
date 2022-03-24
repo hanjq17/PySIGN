@@ -1,3 +1,5 @@
-from .scalar import EGNN
+from .scalar import *
+from .painn import *
+from .et import *
 
-__all__ = ['EGNN']
+

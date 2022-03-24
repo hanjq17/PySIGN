@@ -1,0 +1,131 @@
+from math import pi
+
+import torch
+import torch.nn as nn
+
+__all__ = ['rbf_class_mapping', 'GaussianRBF' ,'BesselRBF']
+
+
+class GaussianRBF(nn.Module):
+    def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
+        super(GaussianRBF, self).__init__()
+        self.cutoff_lower = cutoff_lower
+        self.cutoff_upper = cutoff_upper
+        self.num_rbf = num_rbf
+        self.trainable = trainable
+
+        offset, coeff = self._initial_params()
+        if trainable:
+            self.register_parameter("coeff", nn.Parameter(coeff))
+            self.register_parameter("offset", nn.Parameter(offset))
+        else:
+            self.register_buffer("coeff", coeff)
+            self.register_buffer("offset", offset)
+
+    def _initial_params(self):
+        offset = torch.linspace(self.cutoff_lower, self.cutoff_upper, self.num_rbf)
+        coeff = -0.5 / (offset[1] - offset[0]) ** 2
+        return offset, coeff
+
+    def reset_parameters(self):
+        offset, coeff = self._initial_params()
+        self.offset.data.copy_(offset)
+        self.coeff.data.copy_(coeff)
+
+    def forward(self, dist):
+        dist = dist.unsqueeze(-1) - self.offset
+        return torch.exp(self.coeff * torch.pow(dist, 2))
+
+
+class ExpNormalRBF(nn.Module):
+    def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=True):
+        super(ExpNormalRBF, self).__init__()
+        self.cutoff_lower = cutoff_lower
+        self.cutoff_upper = cutoff_upper
+        self.num_rbf = num_rbf
+        self.trainable = trainable
+
+        self.alpha = 5.0 / (cutoff_upper - cutoff_lower)
+
+        means, betas = self._initial_params()
+        if trainable:
+            self.register_parameter("means", nn.Parameter(means))
+            self.register_parameter("betas", nn.Parameter(betas))
+        else:
+            self.register_buffer("means", means)
+            self.register_buffer("betas", betas)
+
+    def _initial_params(self):
+        # initialize means and betas according to the default values in PhysNet
+        # https://pubs.acs.org/doi/10.1021/acs.jctc.9b00181
+        start_value = torch.exp(
+            torch.scalar_tensor(-self.cutoff_upper + self.cutoff_lower)
+        )
+        means = torch.linspace(start_value, 1, self.num_rbf)
+        betas = torch.tensor(
+            [(2 / self.num_rbf * (1 - start_value)) ** -2] * self.num_rbf
+        )
+        return means, betas
+
+    def reset_parameters(self):
+        means, betas = self._initial_params()
+        self.means.data.copy_(means)
+        self.betas.data.copy_(betas)
+
+    def forward(self, dist):
+        dist = dist.unsqueeze(-1)
+        return torch.exp(
+            -self.betas
+            * (torch.exp(self.alpha * (-dist + self.cutoff_lower)) - self.means) ** 2
+        )
+
+class BesselRBF(nn.Module):
+    """
+    Sine for radial basis functions with coulomb decay (0th order bessel).
+
+    References:
+
+    .. [#dimenet] Klicpera, Groß, Günnemann:
+       Directional message passing for molecular graphs.
+       ICLR 2020
+    """
+
+    def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
+        """
+        Args:
+            cutoff: radial cutoff
+            n_rbf: number of basis functions.
+        """
+        super(BesselRBF, self).__init__()
+        self.num_rbf = num_rbf
+        self.cutoff_lower = cutoff_lower
+        self.cutoff_upper = cutoff_upper
+        self.trainable = trainable
+
+        freqs = self._initial_params()
+        if self.trainable:
+            self.register_parameter("freqs", nn.Parameters(freqs))
+        else: 
+            self.register_buffer("freqs", freqs)
+
+    def _initial_params(self):
+        freqs = torch.arange(1, n_rbf + 1) * pi / (cutoff_upper - cutoff_lower)
+        return freqs
+
+    def reset_parameters(self):
+        freqs = self._initial_params()
+        self.freqs.data.copy_(freqs)
+
+    def forward(self, inputs):
+        ax = (inputs[..., None] - self.cutoff_lower) * self.freqs
+        sinax = torch.sin(ax)
+        norm = torch.where(inputs == 0, torch.tensor(1.0, device=inputs.device), inputs)
+        y = sinax / norm[..., None]
+        return y
+
+
+rbf_class_mapping = {
+    'gaussian': GaussianRBF,
+    'expnorm': ExpNormalRBF,
+    "bessel": BesselRBF
+}
