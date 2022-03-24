@@ -161,5 +161,68 @@ class EGNNLayer(nn.Module):
         return h, coord, edge_attr
 
 
+class RadialFieldLayer(nn.Module):
+    """
+    Radial Field Layer
 
+    :param hidden_nf: Number of hidden features, default: 64
+    :param edge_attr_nf: Number of input edge features, default: 0
+    :param act_fn: The activation function, default: LeakyReLU
+    """
+    def __init__(self, hidden_nf=64, edge_attr_nf=0, act_fn=nn.LeakyReLU(0.2)):
+        super(RadialFieldLayer, self).__init__()
+        self.coord_mlp_vel = nn.Sequential(
+            nn.Linear(1, hidden_nf),
+            act_fn,
+            nn.Linear(hidden_nf, 1))
+        layer = nn.Linear(hidden_nf, 1, bias=False)
+        torch.nn.init.xavier_uniform_(layer.weight, gain=0.001)
+        self.phi = nn.Sequential(nn.Linear(1 + edge_attr_nf, hidden_nf), act_fn, layer, nn.Tanh())
+
+    def forward(self, x, vel_norm, vel, edge_index, edge_attr=None):
+        """
+        The update of a layer.
+
+        :param x: The input position.
+        :param vel_norm: The norm of velocity.
+        :param vel: The input velocity.
+        :param edge_index: The edge index.
+        :param edge_attr: The edge features.
+        :return: The updated position.
+        """
+        row, col = edge_index
+        edge_m = self.edge_model(x[row], x[col], edge_attr)
+        x = self.node_model(x, edge_index, edge_m)
+        x += vel * self.coord_mlp_vel(vel_norm)
+        return x, edge_attr
+
+    def edge_model(self, source, target, edge_attr):
+        """
+        The update of edge message.
+
+        :param source: The position of node :math:`i`, :math:`x_i`.
+        :param target: The position of node :math:`j`, :math:`x_j`.
+        :param edge_attr: The edge feature :math:`e_{ij}`.
+        :return: The edge message.
+        """
+        x_diff = source - target
+        radial = torch.sqrt(torch.sum(x_diff ** 2, dim=1)).unsqueeze(1)
+        e_input = torch.cat([radial, edge_attr], dim=1)
+        e_out = self.phi(e_input)
+        m_ij = x_diff * e_out
+        return m_ij
+
+    def node_model(self, x, edge_index, edge_m):
+        """
+        The update of node position.
+
+        :param x: The input node embedding.
+        :param edge_index: The edge index.
+        :param edge_m: The edge message.
+        :return: The aggregated node position.
+        """
+        row, col = edge_index
+        agg = unsorted_segment_mean(edge_m, row, num_segments=x.size(0))
+        x_out = x + agg
+        return x_out
 

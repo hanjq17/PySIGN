@@ -1,3 +1,3 @@
-from .scalar import EGNNLayer
+from .scalar import EGNNLayer, RadialFieldLayer
 
-__all__ = ['EGNNLayer']
+__all__ = ['EGNNLayer', 'RadialFieldLayer']
