@@ -1,3 +1,4 @@
-from .scalar import EGNN, RadialField
+from .scalar import *
+from .painn import *
+from .et import *
 
-__all__ = ['EGNN', 'RadialField']

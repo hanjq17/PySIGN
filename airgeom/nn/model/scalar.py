@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 from ..layer import EGNNLayer, RadialFieldLayer
 
+__all__ = ['EGNN']
 
 class EGNN(nn.Module):
     """

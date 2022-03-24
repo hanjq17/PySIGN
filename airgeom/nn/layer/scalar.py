@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from ...utils import unsorted_segment_sum, unsorted_segment_mean
 
+__all__ = ['EGNNLayer']
 
 class EGNNLayer(nn.Module):
     """

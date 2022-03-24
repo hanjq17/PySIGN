@@ -130,5 +130,8 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+cached_datasets
+saved_models
+
 # Pyre type checker
 .pyre/
