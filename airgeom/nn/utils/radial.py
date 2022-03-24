@@ -172,7 +172,7 @@ class BesselRBF(nn.Module):
             self.register_buffer("freqs", freqs)
 
     def _initial_params(self):
-        freqs = torch.arange(1, self.n_rbf + 1) * pi / (self.cutoff_upper - self.cutoff_lower)
+        freqs = torch.arange(1, self.num_rbf + 1) * pi / (self.cutoff_upper - self.cutoff_lower)
         return freqs
 
     def reset_parameters(self):
