@@ -7,6 +7,22 @@ __all__ = ['rbf_class_mapping', 'GaussianRBF' ,'BesselRBF']
 
 
 class GaussianRBF(nn.Module):
+    r"""Gaussian radial basis functions.
+    ..math::
+        \phi_i(d) = \exp(coeff * (d-offset_i)^2)
+    
+    where
+    ..math::
+        \begin{cases}
+            offset_i & = L + \frac{U-L}{N}i \\
+            coeff & = -\frac{1}{2}(\frac{U-L}{N})^2
+        \end{cases}
+
+    :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
+    :param cutoff_upper: Upper bound :math:`U` of the cutoff interval.
+    :param num_rbf: Number of radial basis functions :math:`N`.
+    :param trainable: Whether the RBF parameters, i.e. offset and coeff, are trainable.
+    """
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
         super(GaussianRBF, self).__init__()
         self.cutoff_lower = cutoff_lower
@@ -33,11 +49,34 @@ class GaussianRBF(nn.Module):
         self.coeff.data.copy_(coeff)
 
     def forward(self, dist):
+        r"""Forward function.
+
+        :param dist: Distance :math:`d`, (num_nodes,)
+        :return: :math:`\phi(d)`, (num_nodes, num_rbf)
+        """
         dist = dist.unsqueeze(-1) - self.offset
         return torch.exp(self.coeff * torch.pow(dist, 2))
 
 
 class ExpNormalRBF(nn.Module):
+    r"""ExpNormal radial basis functions proposed in PhysNet.
+    ..math::
+        \phi_i(d) = \exp(-\beta_i(\exp(\alpha(L-d))-\mu_i)^2)
+    
+    where
+    ..math::
+        \begin{cases}
+            \mu_i & = s + \frac{1-s}{N}i \\
+            \beta_i & = \frac{2(1-s)}{N}^{-2}N \\
+            \alpha & =\frac{5}{U-L} \\
+            s = \exp(L-U)
+        \end{cases}
+
+    :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
+    :param cutoff_upper: Upper bound :math:`U` of the cutoff interval.
+    :param num_rbf: Number of radial basis functions :math:`N`.
+    :param trainable: Whether the RBF parameters, i.e. :math:`\mu` and :math:`\beta`, are trainable.
+    """
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=True):
         super(ExpNormalRBF, self).__init__()
         self.cutoff_lower = cutoff_lower
@@ -73,6 +112,11 @@ class ExpNormalRBF(nn.Module):
         self.betas.data.copy_(betas)
 
     def forward(self, dist):
+        r"""Forward function.
+
+        :param dist: Distance :math:`d`, (num_nodes,)
+        :return: :math:`\phi(d)`, (num_nodes, num_rbf)
+        """
         dist = dist.unsqueeze(-1)
         return torch.exp(
             -self.betas
@@ -81,7 +125,7 @@ class ExpNormalRBF(nn.Module):
 
 
 class BesselRBF(nn.Module):
-    """
+    r"""
     Sine for radial basis functions with coulomb decay (0th order bessel).
 
     References:
@@ -89,6 +133,18 @@ class BesselRBF(nn.Module):
     .. Klicpera, Groß, Günnemann:
        Directional message passing for molecular graphs.
        ICLR 2020
+
+    ..math::
+        \phi_i(d) = \frac{\sin(\alpha_i(d-L))}{d-L}
+
+    where
+    ..math::
+        \alpha_i = \frac{\pi i}{U-L}
+    
+    :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
+    :param cutoff_upper: Upper bound :math:`U` of the cutoff interval.
+    :param num_rbf: Number of radial basis functions :math:`N`.
+    :param trainable: Whether the RBF parameter :math:`\alpha` is trainable.
     """
 
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
@@ -112,10 +168,16 @@ class BesselRBF(nn.Module):
         freqs = self._initial_params()
         self.freqs.data.copy_(freqs)
 
-    def forward(self, inputs):
-        ax = (inputs[..., None] - self.cutoff_lower) * self.freqs
+    def forward(self, dist):
+        r"""Forward function.
+
+        :param dist: Distance :math:`d`, (num_nodes,)
+        :return: :math:`\phi(d)`, (num_nodes, num_rbf)
+        """
+        inputs = dist - self.cutoff_lower
+        ax = inputs[..., None] * self.freqs
         sinax = torch.sin(ax)
-        norm = torch.where(inputs == 0, torch.tensor(1.0, device=inputs.device), inputs)
+        norm = torch.where(inputs == 0, torch.tensor(1.0, device=dist.device), inputs)
         y = sinax / norm[..., None]
         return y
 
