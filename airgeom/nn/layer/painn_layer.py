@@ -1,12 +1,10 @@
-from typing import Callable, Dict, Optional
-
+from typing import Callable
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 from torch_scatter import scatter_add
 
 __all__ = ['PaiNNInteraction', 'PaiNNMixing', 'replicate_module']
+
 
 class PaiNNInteraction(nn.Module):
     r"""PaiNN interaction block for modeling equivariant interactions of atomistic systems."""
@@ -115,6 +113,7 @@ class PaiNNMixing(nn.Module):
         q = q + dq_intra + dqmu_intra
         mu = mu + dmu_intra
         return q, mu
+
 
 def replicate_module(
     module_factory: Callable[[], nn.Module], n: int, share_params: bool

@@ -3,9 +3,10 @@ import torch
 from torch import nn
 from torch_geometric.nn import MessagePassing
 from torch_scatter import scatter
-from .cutoff import CosineCutoff
+from ..utils import CosineCutoff
 
 __all__ = ['act_class_mapping', 'NeighborEmbedding', 'EquivariantMultiHeadAttention']
+
 
 class ShiftedSoftplus(nn.Module):
     def __init__(self):
@@ -15,12 +16,14 @@ class ShiftedSoftplus(nn.Module):
     def forward(self, x):
         return F.softplus(x) - self.shift
 
+
 act_class_mapping = {
     "ssp": ShiftedSoftplus,
     "silu": nn.SiLU,
     "tanh": nn.Tanh,
     "sigmoid": nn.Sigmoid,
 }
+
 
 class NeighborEmbedding(MessagePassing):
     def __init__(self, hidden_channels, num_rbf, cutoff_lower, cutoff_upper, max_z=100):
@@ -58,6 +61,7 @@ class NeighborEmbedding(MessagePassing):
 
     def message(self, x_j, W):
         return x_j * W
+
 
 class EquivariantMultiHeadAttention(MessagePassing):
     def __init__(

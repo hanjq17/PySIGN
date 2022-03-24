@@ -2,9 +2,8 @@ import math
 import torch
 from torch import nn
 
-__all__ = [
-    "CosineCutoff"
-]
+__all__ = ['CosineCutoff']
+
 
 class CosineCutoff(nn.Module):
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0):

@@ -2,7 +2,8 @@ import torch.nn as nn
 import torch
 from ..layer import EGNNLayer, RadialFieldLayer
 
-__all__ = ['EGNN']
+__all__ = ['EGNN', 'RadialFieldLayer']
+
 
 class EGNN(nn.Module):
     """
@@ -12,7 +13,6 @@ class EGNN(nn.Module):
     :param hidden_nf: Number of hidden features
     :param out_node_nf: Number of features for 'h' at the output
     :param in_edge_nf: Number of features for the edge features
-    :param device: Device (e.g. 'cpu', 'cuda:0',...)
     :param act_fn: Non-linearity
     :param n_layers: Number of layer
     :param residual: Use residual connections, and we recommend not changing this one
@@ -24,11 +24,10 @@ class EGNN(nn.Module):
     :param tanh: Sets a tanh activation function at the output of :math:`\phi_x(m_{ij})`.
         It bounds the output of :math:`\phi_x(m_{ij})` which improves in stability but it may decrease in accuracy.
     """
-    def __init__(self, in_node_nf, hidden_nf, out_node_nf, in_edge_nf=0, device='cpu', act_fn=nn.SiLU(),
+    def __init__(self, in_node_nf, hidden_nf, out_node_nf, in_edge_nf=0, act_fn=nn.SiLU(),
                  n_layers=4, residual=True, attention=False, normalize=False, tanh=False):
         super(EGNN, self).__init__()
         self.hidden_nf = hidden_nf
-        self.device = device
         self.n_layers = n_layers
         self.embedding_in = nn.Linear(in_node_nf, self.hidden_nf)
         self.embedding_out = nn.Linear(self.hidden_nf, out_node_nf)
@@ -36,7 +35,6 @@ class EGNN(nn.Module):
             self.add_module("gcl_%d" % i, EGNNLayer(self.hidden_nf, self.hidden_nf, self.hidden_nf, edges_in_d=in_edge_nf,
                                                     act_fn=act_fn, residual=residual, attention=attention,
                                                     normalize=normalize, tanh=tanh))
-        self.to(self.device)
 
     @property
     def params(self):
@@ -67,23 +65,20 @@ class EGNN(nn.Module):
 
 
 class RadialField(nn.Module):
-    def __init__(self, hidden_nf, edge_attr_nf=0, device='cpu', act_fn=nn.SiLU(), n_layers=4):
+    def __init__(self, hidden_nf, edge_attr_nf=0, act_fn=nn.SiLU(), n_layers=4):
         """
         Radial Field Layer
 
         :param hidden_nf: Number of hidden node features.
         :param edge_attr_nf: Number of edge features, default: 0.
-        :param device: Device, default: 'cpu'.
         :param act_fn: The activation function, default: nn.SiLU.
         :param n_layers: The number of layers, default: 4.
         """
         super(RadialField, self).__init__()
         self.hidden_nf = hidden_nf
-        self.device = device
         self.n_layers = n_layers
         for i in range(n_layers):
             self.add_module("gcl_%d" % i, RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
-        self.to(self.device)
 
     def forward(self, data):
         """

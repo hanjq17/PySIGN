@@ -79,23 +79,19 @@ class ExpNormalRBF(nn.Module):
             * (torch.exp(self.alpha * (-dist + self.cutoff_lower)) - self.means) ** 2
         )
 
+
 class BesselRBF(nn.Module):
     """
     Sine for radial basis functions with coulomb decay (0th order bessel).
 
     References:
 
-    .. [#dimenet] Klicpera, Groß, Günnemann:
+    .. Klicpera, Groß, Günnemann:
        Directional message passing for molecular graphs.
        ICLR 2020
     """
 
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
-        """
-        Args:
-            cutoff: radial cutoff
-            n_rbf: number of basis functions.
-        """
         super(BesselRBF, self).__init__()
         self.num_rbf = num_rbf
         self.cutoff_lower = cutoff_lower
@@ -105,7 +101,7 @@ class BesselRBF(nn.Module):
         freqs = self._initial_params()
         if self.trainable:
             self.register_parameter("freqs", nn.Parameters(freqs))
-        else: 
+        else:
             self.register_buffer("freqs", freqs)
 
     def _initial_params(self):
