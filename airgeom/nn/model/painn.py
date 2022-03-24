@@ -39,8 +39,7 @@ class PaiNN(nn.Module):
             n_atom_basis: number of features to describe atomic environments.
                 This determines the size of each embedding vector; i.e. embeddings_dim.
             n_interactions: number of interaction blocks.
-            radial_basis: layer for expanding interatomic distances in a basis set
-            cutoff_fn: cutoff function
+            radial_basis: layer for expanding inter-atomic distances in a basis set
             activation: activation function
             shared_interactions: if True, share the weights across
                 interaction blocks.
@@ -87,12 +86,21 @@ class PaiNN(nn.Module):
             shared_interactions,
         )
 
+    @property
+    def params(self):
+        """
+        Get the parameters to optimize.
+
+        :return: The parameters to optimize.
+        """
+        return self.parameters()
+
     def forward(self, data):
         """
         Compute atomic representations/embeddings.
 
         Args:
-            inputs (dict of torch.Tensor): SchNetPack dictionary of input tensors.
+            data: The input data object.
 
         Returns:
             torch.Tensor: atom-wise representation.

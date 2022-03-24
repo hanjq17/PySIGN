@@ -80,6 +80,15 @@ class RadialField(nn.Module):
         for i in range(n_layers):
             self.add_module("gcl_%d" % i, RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
 
+    @property
+    def params(self):
+        """
+        Get the parameters to optimize.
+
+        :return: The parameters to optimize.
+        """
+        return self.parameters()
+
     def forward(self, data):
         """
         Conduct Radial Field message passing on data. Radial Field does not update node feature, and thus
