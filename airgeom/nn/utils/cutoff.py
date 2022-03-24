@@ -8,10 +8,12 @@ __all__ = ['CosineCutoff']
 class CosineCutoff(nn.Module):
     r"""
     Cosine cutoff layer
+
     .. math::
-        cutoff(d) & = \begin{cases}
-            \frac{1}{2}(\cos(2\frac{d-L}{U-L}+1)+1), & \text{if } L\leq d\leq U
-            0, & \text(others)
+
+        cutoff(d) = \begin{cases}
+            \frac{1}{2}(\cos(2\frac{d-L}{U-L}+1)+1), & \text{if } L\leq d\leq U \\
+            0, & \text{others}
         \end{cases}
         
 

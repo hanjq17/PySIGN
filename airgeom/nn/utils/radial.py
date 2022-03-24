@@ -3,19 +3,23 @@ from math import pi
 import torch
 import torch.nn as nn
 
-__all__ = ['rbf_class_mapping', 'GaussianRBF' ,'BesselRBF']
+__all__ = ['rbf_class_mapping', 'GaussianRBF','ExpNormalRBF', 'BesselRBF']
 
 
 class GaussianRBF(nn.Module):
     r"""Gaussian radial basis functions.
-    ..math::
-        \phi_i(d) = \exp(coeff * (d-offset_i)^2)
+
+    .. math::
+
+        \phi_i(d) = \exp(\text{coeff} * (d-\text{offset}_i)^2)
     
     where
-    ..math::
+
+    .. math::
+
         \begin{cases}
-            offset_i & = L + \frac{U-L}{N}i \\
-            coeff & = -\frac{1}{2}(\frac{U-L}{N})^2
+            \text{offset}_i & = & L + \frac{U-L}{N}i \\
+            \text{coeff} & = & -\frac{1}{2}(\frac{U-L}{N})^2
         \end{cases}
 
     :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
@@ -60,16 +64,20 @@ class GaussianRBF(nn.Module):
 
 class ExpNormalRBF(nn.Module):
     r"""ExpNormal radial basis functions proposed in PhysNet.
-    ..math::
+
+    .. math::
+
         \phi_i(d) = \exp(-\beta_i(\exp(\alpha(L-d))-\mu_i)^2)
     
     where
-    ..math::
+
+    .. math::
+
         \begin{cases}
             \mu_i & = s + \frac{1-s}{N}i \\
-            \beta_i & = \frac{2(1-s)}{N}^{-2}N \\
+            \beta_i & = (\frac{2(1-s)}{N})^{-2}N \\
             \alpha & =\frac{5}{U-L} \\
-            s = \exp(L-U)
+            s & = \exp(L-U)
         \end{cases}
 
     :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
@@ -134,11 +142,14 @@ class BesselRBF(nn.Module):
        Directional message passing for molecular graphs.
        ICLR 2020
 
-    ..math::
+    .. math::
+
         \phi_i(d) = \frac{\sin(\alpha_i(d-L))}{d-L}
 
     where
-    ..math::
+
+    .. math::
+
         \alpha_i = \frac{\pi i}{U-L}
     
     :param cutoff_lower: Lower bound :math:`L` of the cutoff interval.
@@ -161,7 +172,7 @@ class BesselRBF(nn.Module):
             self.register_buffer("freqs", freqs)
 
     def _initial_params(self):
-        freqs = torch.arange(1, n_rbf + 1) * pi / (cutoff_upper - cutoff_lower)
+        freqs = torch.arange(1, self.n_rbf + 1) * pi / (self.cutoff_upper - self.cutoff_lower)
         return freqs
 
     def reset_parameters(self):
