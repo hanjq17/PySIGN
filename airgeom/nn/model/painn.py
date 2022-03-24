@@ -1,19 +1,18 @@
-from typing import Callable, Dict, Optional
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from ..layer import PaiNNInteraction, PaiNNMixing, replicate_module, rbf_class_mapping, CosineCutoff
+from ..layer import PaiNNInteraction, PaiNNMixing, replicate_module
+from ..utils import rbf_class_mapping, CosineCutoff
 
 __all__ = ['PaiNN']
+
 
 class PaiNN(nn.Module):
     """PaiNN - polarizable interaction neural network
 
     References:
 
-    .. [#painn1] Schütt, Unke, Gastegger:
+    .. Schütt, Unke, Gastegger:
        Equivariant message passing for the prediction of tensorial properties and molecular spectra.
        ICML 2021, http://proceedings.mlr.press/v139/schutt21a.html
 

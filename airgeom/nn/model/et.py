@@ -1,15 +1,7 @@
-from typing import Optional, Tuple
 import torch
 from torch import nn
-from torch_geometric.nn import MessagePassing
-from torch_scatter import scatter
-from ..layer import (
-    NeighborEmbedding,
-    CosineCutoff,
-    rbf_class_mapping,
-    act_class_mapping,
-    EquivariantMultiHeadAttention
-)
+from ..layer import NeighborEmbedding, act_class_mapping, EquivariantMultiHeadAttention
+from ..utils import CosineCutoff, rbf_class_mapping
 
 __all__ = ['EquivariantTransformer']
 
