@@ -1,7 +1,7 @@
 import sys
 sys.path.append('./')
 from airgeom.dataset import QM9
-from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField
+from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet
 from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
 from airgeom.trainer import Trainer
 from airgeom.task import Prediction
@@ -47,6 +47,7 @@ rep_model = EGNN(in_node_nf=11, hidden_nf=args.hidden_dim, out_node_nf=args.hidd
 # rep_model = RadialField(hidden_nf=args.hidden_dim, edge_attr_nf=5, n_layers=args.n_layers)
 # rep_model = PaiNN(max_z=11, n_atom_basis=args.hidden_dim, n_interactions=args.n_layers)
 # rep_model = EquivariantTransformer(max_z=11, hidden_channels=args.hidden_dim, num_layers=args.n_layers)
+# rep_model = SchNet(in_node_nf=11, out_node_nf=args.hidden_dim)
 
 task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim)
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
