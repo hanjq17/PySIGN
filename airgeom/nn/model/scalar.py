@@ -23,9 +23,10 @@ class EGNN(nn.Module):
         It may help in the stability or generalization in some future works.
     :param tanh: Sets a tanh activation function at the output of :math:`\phi_x(m_{ij})`.
         It bounds the output of :math:`\phi_x(m_{ij})` which improves in stability but it may decrease in accuracy.
+    :param use_vel: Whether using velocities as inputs in dynamic simulation.
     """
     def __init__(self, in_node_nf, hidden_nf, out_node_nf, in_edge_nf=0, act_fn=nn.SiLU(),
-                 n_layers=4, residual=True, attention=False, normalize=False, tanh=False):
+                 n_layers=4, residual=True, attention=False, normalize=False, tanh=False, use_vel=False):
         super(EGNN, self).__init__()
         self.hidden_nf = hidden_nf
         self.n_layers = n_layers
@@ -33,7 +34,7 @@ class EGNN(nn.Module):
         self.embedding_out = nn.Linear(self.hidden_nf, out_node_nf)
         for i in range(n_layers):
             self.add_module("gcl_%d" % i, EGNNLayer(self.hidden_nf, self.hidden_nf, self.hidden_nf, edges_in_d=in_edge_nf,
-                                                    act_fn=act_fn, residual=residual, attention=attention,
+                                                    act_fn=act_fn, residual=residual, attention=attention, use_vel=use_vel,
                                                     normalize=normalize, tanh=tanh))
 
     @property
@@ -55,9 +56,13 @@ class EGNN(nn.Module):
         h, x = data.x, data.pos  # TODO: change to data.h and data.x after modifying QM9 dataset
         edges = data.edge_index
         edge_attr = data.edge_attr
+        if 'v' in data.__dict__:
+            vel = data.v
+        else:
+            vel = None
         h = self.embedding_in(h)
         for i in range(self.n_layers):
-            h, x, _ = self._modules["gcl_%d" % i](h, edges, x, edge_attr=edge_attr)
+            h, x, _ = self._modules["gcl_%d" % i](h, edges, x, edge_attr=edge_attr, vel=vel)
         h = self.embedding_out(h)
         # TODO: discuss whether to put x and h back to data
         data.x, data.h = x, h

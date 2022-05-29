@@ -2,12 +2,13 @@ from ..utils import get_optimizer, get_scheduler, StatsCollector, EarlyStopping,
 
 
 class Trainer(object):
-    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True):
+    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True):
         self.dataloaders: dict = dataloaders
         self.task = task.to(device)
         self.args = args
         self.device = device
         self.verbose = verbose
+        self.test = test
         self.optimizer = get_optimizer(args.optimizer, args.lr, args.weight_decay, task.params)
         self.scheduler = get_scheduler(args.scheduler, self.optimizer, args)
         self.stats = StatsCollector()
@@ -50,7 +51,10 @@ class Trainer(object):
                 better = self.early_stopping(val_loss)
                 if better:
                     self.model_saver(ep, val_loss)
-                test_loss = self.evaluate(valid=False)
+                if self.test:
+                    test_loss = self.evaluate(valid=False)
+                else:
+                    test_loss = 0.0
             else:
                 val_loss, test_loss = None, None
             stats = {'train_loss': train_loss, 'val_loss': val_loss, 'test_loss': test_loss}

@@ -17,6 +17,7 @@ class Prediction(BasicTask):
         self.output_dim = output_dim
         self.decoder = self.get_decoder()
         self.loss = self.get_loss()
+        
 
     def get_decoder(self):
         """

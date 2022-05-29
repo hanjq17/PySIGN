@@ -8,6 +8,8 @@ import pickle as pkl
 import os
 import argparse
 
+__all__ = ['MD17', 'MD17_trajectory']
+
 class MD17(InMemoryDataset):
     """Machine learning of accurate energy-conserving molecular force fields (Chmiela et al. 2017)
     This class provides functionality for loading MD trajectories from the original dataset, not the revised versions.
@@ -48,28 +50,15 @@ class MD17(InMemoryDataset):
 
         super(MD17, self).__init__(root, transform, pre_transform)
 
-        self.offsets = [0]
-        self.data_all, self.slices_all = [], []
-        for path in self.processed_paths:
-            data, slices = torch.load(path)
-            self.data_all.append(data)
-            self.slices_all.append(slices)
-            self.offsets.append(
-                len(slices[list(slices.keys())[0]]) - 1 + self.offsets[-1]
-            )
+        path = self.processed_paths[0]
+        self.data, self.slices = torch.load(path)
+
 
     def len(self):
-        return sum(
-            len(slices[list(slices.keys())[0]]) - 1 for slices in self.slices_all
-        )
+        return len(self.slices[list(self.slices.keys())[0]]) - 1
 
     def get(self, idx):
-        data_idx = 0
-        while data_idx < len(self.data_all) - 1 and idx >= self.offsets[data_idx + 1]:
-            data_idx += 1
-        self.data = self.data_all[data_idx]
-        self.slices = self.slices_all[data_idx]
-        data = super(MD17, self).get(idx - self.offsets[data_idx])
+        data = super(MD17, self).get(idx)
         if self.transform:
             return self.transform(data)
         else:
@@ -109,8 +98,52 @@ class MD17(InMemoryDataset):
             data, slices = self.collate(samples)
             torch.save((data, slices), self.processed_paths[0])
 
+class MD17_trajectory(MD17):
+    def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
+        super(MD17_trajectory, self).__init__(root, transform, pre_transform, dataset_arg)
+        self.vel_step = vel_step
+        self.pred_step = pred_step
+    
+    def get(self,idx):
+        prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
+        next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
+        data, data_prev, data_next = super(MD17_trajectory, self).get(idx), super(MD17_trajectory, self).get(prev_idx), super(MD17_trajectory, self).get(next_idx)
+        data.v = data.pos - data_prev.pos
+        data.pred = data_next.pos - data.pos
+        if self.transform:
+            return self.transform(data)
+        else:
+            return data      
 
-def get_dataloaders(dataset, num_train, num_val, batch_size, test_batch_size, num_workers, idx_dir):
+    def download(self):
+        for file_name in self.raw_file_names:
+            download_url(MD17.raw_url + file_name, self.raw_dir)
+
+
+    def process(self):
+        for path in self.raw_paths:
+            data_npz = np.load(path)
+            z = torch.from_numpy(data_npz["z"]).long()
+            positions = torch.from_numpy(data_npz["R"]).float()
+            energies = torch.from_numpy(data_npz["E"]).float()
+            forces = torch.from_numpy(data_npz["F"]).float()
+
+            samples = []
+            for pos, y, dy in zip(positions, energies, forces):
+                samples.append(Data(z=z, pos=pos, y=y.unsqueeze(1), dy=dy))
+
+            if self.pre_filter is not None:
+                samples = [data for data in samples if self.pre_filter(data)]
+
+            if self.pre_transform is not None:
+                samples = [self.pre_transform(data) for data in tqdm(samples)]
+
+            data, slices = self.collate(samples)
+            torch.save((data, slices), self.processed_paths[0]) 
+        
+
+
+def get_dataloaders(dataset, num_train, num_val, batch_size, test_batch_size, num_workers, idx_dir, shuffle = True):
     idx_file = os.path.join(idx_dir,'idx.pkl')
     if os.path.exists(idx_file):
         with open(idx_file,'rb') as f:
