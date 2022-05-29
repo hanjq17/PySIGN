@@ -24,7 +24,7 @@ args.batch_size = 32
 transform = T.Compose([AtomOnehot(max_atom_type=args.max_atom_type, charge_power=args.charge_power, atom_type_name='z'),ToFullyConnected()])
 base_path = os.path.join(args.data_path, args.molecule)
 os.makedirs(base_path, exist_ok=True)
-dataset = MD17_trajectory(root=base_path, dataset_arg=args.molecule, transform=transform)
+dataset = MD17_trajectory(root=base_path, dataset_arg=args.molecule, transform=transform, vel_step=args.vel_step, pred_step=args.pred_step)
 print('Data ready')
 
 # Split datasets.
@@ -44,7 +44,7 @@ rep_model = EGNN(in_node_nf=args.max_atom_type * (args.charge_power + 1), hidden
 # Grad clip is needed if num_blocks is set to larger value
 # rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
 
-task = TrajectoryPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type='Scalar')
+task = TrajectoryPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type='DifferentialVector')
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False)
 
 trainer.loop()
