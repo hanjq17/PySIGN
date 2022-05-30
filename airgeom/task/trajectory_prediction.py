@@ -69,7 +69,7 @@ class TrajectoryPrediction(BasicTask):
         output = self.decoder(data)  # node-wise rep
         if self.decoder_type in ['Scalar', 'EquivariantScalar']:
             output = global_add_pool(output, data.batch)
-            grad_outputs: List[Optional[torch.Tensor]] = [torch.ones_like(output)]
+            grad_outputs = [torch.ones_like(output)]
             dy = - grad(
                 [output],
                 [data.pos],
