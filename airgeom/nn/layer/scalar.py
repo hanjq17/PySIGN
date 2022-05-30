@@ -168,6 +168,7 @@ class EGNNLayer(nn.Module):
         edge_feat = self.edge_model(h[row], h[col], radial, edge_attr)
         coord = self.coord_model(coord, edge_index, coord_diff, edge_feat)
         if self.use_vel and vel is not None:
+            # vel = vel * 100
             coord = coord + self.coord_mlp_vel(h) * vel
         h, agg = self.node_model(h, edge_index, edge_feat, node_attr)
 
@@ -220,7 +221,10 @@ class RadialFieldLayer(nn.Module):
         """
         x_diff = source - target
         radial = torch.sqrt(torch.sum(x_diff ** 2, dim=1)).unsqueeze(1)
-        e_input = torch.cat([radial, edge_attr], dim=1)
+        if edge_attr is not None:
+            e_input = torch.cat([radial, edge_attr], dim=1)
+        else:
+            e_input = radial
         e_out = self.phi(e_input)
         m_ij = x_diff * e_out
         return m_ij

@@ -56,7 +56,7 @@ class EGNN(nn.Module):
         h, x = data.x, data.pos  # TODO: change to data.h and data.x after modifying QM9 dataset
         edges = data.edge_index
         edge_attr = data.edge_attr
-        if 'v' in data.__dict__:
+        if hasattr(data, 'v'):
             vel = data.v
         else:
             vel = None
@@ -105,7 +105,7 @@ class RadialField(nn.Module):
         x = data.pos
         edges = data.edge_index
         edge_attr = data.edge_attr
-        if 'v' in data.__dict__:
+        if hasattr(data, 'v'):
             v = data.v
         else:
             v = torch.ones_like(x)
