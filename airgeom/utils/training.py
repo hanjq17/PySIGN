@@ -80,7 +80,8 @@ class SavingHandler(object):
 
     def __call__(self, epoch, metric):
         if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
+            # os.mkdir(self.save_path)
+            os.makedirs(self.save_path)
         if len(self.saved_models) >= self.max_instances:
             # pop the worst model
             os.remove(os.path.join(self.save_path, 'epoch_' + str(self.saved_models[0][0]) + '.pth'))

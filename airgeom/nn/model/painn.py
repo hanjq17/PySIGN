@@ -128,7 +128,11 @@ class PaiNN(nn.Module):
 
         q = self.embedding(atomic_numbers)[:, None]
         qs = q.shape
-        mu = torch.zeros((qs[0], 3, qs[2]), device=q.device)
+
+        if hasattr(data, 'v'):
+            mu = data.v.unsqueeze(-1).repeat(1,1,qs[2])
+        else:
+            mu = torch.zeros((qs[0], 3, qs[2]), device=q.device)
 
         for i, (interaction, mixing) in enumerate(zip(self.interactions, self.mixing)):
             q, mu = interaction(q, mu, filter_list[i], dir_ij, idx_i, idx_j, n_atoms)

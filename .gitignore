@@ -134,6 +134,7 @@ dmypy.json
 
 cached_datasets
 saved_models
+cache
 
 # Pyre type checker
 .pyre/
