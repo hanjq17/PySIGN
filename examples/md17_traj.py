@@ -14,8 +14,6 @@ import os
 
 torch.cuda.set_device(0)
 
-torch.autograd.set_detect_anomaly(True)
-
 param_path = 'examples/configs/md17_config.json'
 args = get_default_args()
 args = load_params(args, param_path=param_path)
