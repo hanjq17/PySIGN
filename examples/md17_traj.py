@@ -115,6 +115,9 @@ elif args.model == 'PaiNN':
 elif args.model == 'ET':
     rep_model = EquivariantTransformer(max_z=args.max_atom_type * (args.charge_power + 1), hidden_channels=args.hidden_dim, num_layers=args.n_layers)
 
+else:
+    raise NotImplementedError('Unknown model', args.model)
+
 # Grad clip is needed if num_blocks is set to larger value
 # rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
 

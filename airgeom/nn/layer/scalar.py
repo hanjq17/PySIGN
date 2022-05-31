@@ -168,7 +168,6 @@ class EGNNLayer(nn.Module):
         edge_feat = self.edge_model(h[row], h[col], radial, edge_attr)
         coord = self.coord_model(coord, edge_index, coord_diff, edge_feat)
         if self.use_vel and vel is not None:
-            # vel = vel * 100
             coord = coord + self.coord_mlp_vel(h) * vel
         h, agg = self.node_model(h, edge_index, edge_feat, node_attr)
 
