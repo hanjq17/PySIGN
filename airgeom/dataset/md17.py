@@ -108,7 +108,7 @@ class MD17_trajectory(MD17):
         prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
         next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
         data, data_prev, data_next = super(MD17_trajectory, self).get(idx), super(MD17_trajectory, self).get(prev_idx), super(MD17_trajectory, self).get(next_idx)
-        data.v = data.pos - data_prev.pos
+        data.v = (data.pos - data_prev.pos) / self.vel_step * self.pred_step
         data.pred = data_next.pos - data.pos
         if self.transform:
             return self.transform(data)
