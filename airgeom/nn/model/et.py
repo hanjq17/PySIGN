@@ -5,7 +5,6 @@ from ..utils import CosineCutoff, rbf_class_mapping
 
 __all__ = ['EquivariantTransformer']
 
-
 class EquivariantTransformer(nn.Module):
     r"""The TorchMD equivariant Transformer architecture.
 
@@ -151,15 +150,15 @@ class EquivariantTransformer(nn.Module):
         x = self.embedding(z)
         pos = data.pos
         edge_index = data.edge_index
+        edge_index = edge_index[:, edge_index[0] != edge_index[1]]
         edge_vec = pos[edge_index[0]] - pos[edge_index[1]]
 
-        mask = edge_index[0] != edge_index[1]
 
-        edge_weight = torch.where(mask, torch.norm(edge_vec, dim=-1), torch.zeros(edge_vec.size(0), device=edge_vec.device))
+        edge_weight = torch.norm(edge_vec, dim=-1)
         
         edge_attr = self.cutoff_fn(edge_weight.unsqueeze(-1)) * self.distance_expansion(edge_weight)
         
-        edge_vec[mask] = edge_vec[mask] / edge_weight[mask].unsqueeze(1)
+        edge_vec = edge_vec / edge_weight.unsqueeze(1)
 
         if self.neighbor_embedding is not None:
             x = self.neighbor_embedding(z, x, edge_index, edge_weight, edge_attr)
