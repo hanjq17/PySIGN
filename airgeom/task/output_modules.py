@@ -138,7 +138,9 @@ class EquivariantVector(nn.Module):
         x,v = data.h, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
-        return v.squeeze(-1)
+        dt, dv = x, v.squeeze(-1)
+        # return v.squeeze(-1)
+        return data.v * dt + dv
 
 
 class DifferentialVector(nn.Module):
