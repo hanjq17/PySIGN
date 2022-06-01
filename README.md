@@ -18,3 +18,8 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 | SchNet         | &#10004; |                   |                    |
 | PaiNN          | &#10004; | &#10004;          |                    |
 | ET             | &#10004; | &#10004;          |                    |
+
+### MD Trajectories
+
+![GT](visualization/vis/gt_asp_1000.gif "GT")
+![EGNN](visualization/vis/egnn_asp_1000.gif "EGNN")
