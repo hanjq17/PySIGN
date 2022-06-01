@@ -142,5 +142,5 @@ class PaiNN(nn.Module):
 
         data.x = x
         data.h = q
-        data.v = mu
+        data.vec = mu
         return data

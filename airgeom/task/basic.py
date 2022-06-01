@@ -36,7 +36,7 @@ class BasicTask(Module):
         """
         raise NotImplementedError()
 
-    def __call__(self, data):
+    def forward(self, data):
         """
         Forward passing with the data object.
 

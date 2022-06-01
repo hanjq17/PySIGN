@@ -19,6 +19,7 @@ args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)
 
+
 class MD17_transform(object):
     def __init__(self, max_atom_type, charge_power, atom_type_name, max_hop, cutoff):
         self.max_atom_type = max_atom_type
@@ -86,7 +87,7 @@ transform.get_example(dataset[0])
 dataset.transform = transform
 print('Data ready')
 
-# Split datasets.
+# Split datasets
 train_dataset = dataset[args.vel_step: args.vel_step + 9500]
 val_dataset = dataset[args.vel_step + 9500: args.vel_step + 10000]
 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -120,8 +121,8 @@ else:
 
 # Grad clip is needed if num_blocks is set to larger value
 # rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
-
-args.model_save_path = os.path.join(args.model_save_path, args.model, args.molecule)
+# torch.autograd.set_detect_anomaly(True)
+args.model_save_path = os.path.join(args.model_save_path, '_'.join([args.model, args.decoder]), args.molecule)
 
 task = TrajectoryPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False)

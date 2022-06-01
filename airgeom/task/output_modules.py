@@ -8,6 +8,7 @@ act_class_mapping = {
     "sigmoid": nn.Sigmoid,
 }
 
+
 class GatedEquivariantBlock(nn.Module):
     """Gated Equivariant Block as defined in Schütt et al. (2021):
     Equivariant message passing for the prediction of tensorial properties and molecular spectra
@@ -60,15 +61,14 @@ class GatedEquivariantBlock(nn.Module):
         return x, v
 
 
-
 class Scalar(nn.Module):
-    def __init__(self, hidden_channels, activation="silu", allow_prior_model=True):
+    def __init__(self, hidden_channels, activation="silu"):
         super(Scalar, self).__init__()
         act_class = act_class_mapping[activation]
         self.output_network = nn.Sequential(
             nn.Linear(hidden_channels, hidden_channels // 2),
             act_class(),
-            nn.Linear(hidden_channels // 2, 1),
+            nn.Linear(hidden_channels // 2, 2),  # [energy, dt]
         )
 
         self.reset_parameters()
@@ -85,7 +85,7 @@ class Scalar(nn.Module):
 
 
 class EquivariantScalar(nn.Module):
-    def __init__(self, hidden_channels, activation="silu", allow_prior_model=True):
+    def __init__(self, hidden_channels, activation="silu"):
         super(EquivariantScalar, self).__init__()
         self.output_network = nn.ModuleList(
             [
@@ -95,7 +95,7 @@ class EquivariantScalar(nn.Module):
                     activation=activation,
                     scalar_activation=True,
                 ),
-                GatedEquivariantBlock(hidden_channels // 2, 1, activation=activation),
+                GatedEquivariantBlock(hidden_channels // 2, 2, activation=activation),
             ]
         )
 
@@ -106,11 +106,12 @@ class EquivariantScalar(nn.Module):
             layer.reset_parameters()
 
     def forward(self, data):
-        x,v = data.h, data.v
+        x,v = data.h, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
         # include v in output to make sure all parameters have a gradient
         return x + v.sum() * 0
+
 
 class EquivariantVector(nn.Module):
     def __init__(self, hidden_channels, activation="silu"):
@@ -134,10 +135,11 @@ class EquivariantVector(nn.Module):
             layer.reset_parameters()
 
     def forward(self, data):
-        x,v = data.h, data.v
+        x,v = data.h, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
         return v.squeeze(-1)
+
 
 class DifferentialVector(nn.Module):
     def __init__(self):

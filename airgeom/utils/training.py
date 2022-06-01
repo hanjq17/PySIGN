@@ -17,7 +17,7 @@ def get_optimizer(opt, lr, weight_decay, params):
 
 def get_scheduler(scheduler, opt, args):
     if scheduler == 'Plateau':
-        return ReduceLROnPlateau(optimizer=opt)
+        return ReduceLROnPlateau(optimizer=opt, factor=0.5, patience=20, verbose=True)
     else:
         raise NotImplementedError('Unknown scheduler', scheduler)
 
@@ -71,7 +71,7 @@ class StatsCollector(object):
 
 
 class SavingHandler(object):
-    def __init__(self, model, save_path, lower_is_better=True, max_instances=3):
+    def __init__(self, model, save_path, lower_is_better=True, max_instances=5):
         self.lower_is_better = lower_is_better
         self.max_instances = max_instances
         self.model = model
@@ -108,5 +108,8 @@ class EarlyStopping(object):
             self.counter += 1
             if self.verbose:
                 print('Early Stopping counter:', self.counter)
+            if self.counter > self.max_times:
+                print('Early Stopping with patience', self.max_times, 'epochs, exit!')
+                exit(0)
         return better
 

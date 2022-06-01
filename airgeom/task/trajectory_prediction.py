@@ -3,6 +3,7 @@ from torch_geometric.nn import global_add_pool
 from .basic import BasicTask
 from .output_modules import *
 from torch.autograd import grad
+import torch.nn as nn
 
 
 class TrajectoryPrediction(BasicTask):
@@ -35,6 +36,8 @@ class TrajectoryPrediction(BasicTask):
             decoder = EquivariantVector(self.rep_dim)
         elif self.decoder_type == 'DifferentialVector':
             decoder = DifferentialVector()
+        else:
+            raise NotImplementedError('Unknown decoder type:', self.decoder_type)
         return decoder
 
     def get_loss(self):
@@ -55,7 +58,7 @@ class TrajectoryPrediction(BasicTask):
         """
         return self.parameters()
 
-    def __call__(self, data):
+    def forward(self, data):
         """
         Forward passing with the data object. First, the data is processed by the representation module.
         Afterwards, the representation is delivered to the decoder, and the output together with labels yield the loss.
@@ -66,8 +69,9 @@ class TrajectoryPrediction(BasicTask):
         if self.decoder_type in ['Scalar', 'EquivariantScalar']:
             data.pos.requires_grad_(True)
         rep = self.rep(data)
-        output = self.decoder(data)  # node-wise rep
+        output = self.decoder(rep)  # node-wise rep
         if self.decoder_type in ['Scalar', 'EquivariantScalar']:
+            output, dt = output[..., 0].unsqueeze(-1), output[..., 1].unsqueeze(-1)
             output = global_add_pool(output, data.batch)
             grad_outputs = [torch.ones_like(output)]
             dy = - grad(
@@ -77,7 +81,7 @@ class TrajectoryPrediction(BasicTask):
                 create_graph=True,
                 retain_graph=True,
             )[0]
-            output = dy
+            output = dy + dt * data.v
         loss = self.loss(output, data.pred).sum(dim=-1)
         return output, loss
 

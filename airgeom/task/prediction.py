@@ -17,7 +17,6 @@ class Prediction(BasicTask):
         self.output_dim = output_dim
         self.decoder = self.get_decoder()
         self.loss = self.get_loss()
-        
 
     def get_decoder(self):
         """
@@ -46,7 +45,7 @@ class Prediction(BasicTask):
         """
         return self.parameters()
 
-    def __call__(self, data):
+    def forward(self, data):
         """
         Forward passing with the data object. First, the data is processed by the representation module.
         Afterwards, the representation is delivered to the decoder, and the output together with labels yield the loss.
