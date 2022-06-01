@@ -90,6 +90,15 @@ class SavingHandler(object):
         save_name = os.path.join(self.save_path, 'epoch_' + str(epoch) + '.pth')
         torch.save(self.model.state_dict(), save_name)
 
+    def load(self, epoch='best'):
+        models = os.listdir(self.save_path)
+        models = [_ for _ in models if 'epoch' in _]
+        epoch_idx = [int(_.split('_')[-1].split('.')[0]) for _ in models]
+        idx = np.argmax(epoch_idx)
+        best_model = models[idx]
+        self.model.load_state_dict(torch.load(os.path.join(self.save_path, best_model)))
+        print('Loaded from', os.path.join(self.save_path, best_model))
+
 
 class EarlyStopping(object):
     def __init__(self, lower_is_better=True, max_times=10, verbose=True):
