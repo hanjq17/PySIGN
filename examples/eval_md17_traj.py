@@ -137,7 +137,7 @@ args.model_save_path = os.path.join(args.model_save_path, '_'.join([args.model, 
 
 task = TrajectoryPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
 trainer = DynamicsTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False,
-                          rollout_step=args.rollout_step, save_pred=True)
+                          rollout_step=args.rollout_step, save_pred=args.save_pred)
 trainer.model_saver.load(epoch='best')
 
 all_loss, all_pred = trainer.evaluate_rollout(valid=False)
