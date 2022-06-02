@@ -21,5 +21,5 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 
 ### MD Trajectories
 
-![GT](visualization/vis/gt_asp_1000.gif "GT")
-![EGNN](visualization/vis/egnn_asp_1000.gif "EGNN")
+![GT](visualization/vis/Aspirin_GT_1000.gif "GT")
+![EGNN](visualization/vis/Aspirin_EGNN_DifferentialVector_1000.gif "EGNN")
