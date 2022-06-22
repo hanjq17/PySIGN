@@ -1,7 +1,7 @@
 from torch.nn import Linear, MSELoss, Module, L1Loss
 from torch_geometric.nn import global_add_pool
 from .basic import BasicTask
-from .output_modules import *
+from .utils.output_modules import *
 from torch.autograd import grad
 import torch.nn as nn
 

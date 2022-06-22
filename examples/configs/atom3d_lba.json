@@ -1,0 +1,20 @@
+{
+    "exp_name": "LBA",
+    "batch_size": 16,
+    "epoch": 100,
+    "seed": 1,
+    "lr": 0.00001,
+    "hidden_dim": 64,
+    "data_path": "/apdcephfs/share_1364275/jiaqihan/atom3d/data/lba/data",
+    "model_save_path": "saved_models",
+    "seqid": 30,
+    "precomputed": false,
+
+    "model": "GNN",
+    "n_layers": 4,
+    "earlystopping": 10,
+    "weight_decay": 1e-10,
+    "optimizer": "Adam",
+    "scheduler": "Plateau",
+    "eval_epoch": 1
+}

@@ -1,0 +1,19 @@
+{
+    "exp_name": "LEP",
+    "batch_size": 4,
+    "epoch": 20,
+    "seed": 1,
+    "lr": 0.00001,
+    "hidden_dim": 64,
+    "data_path": "/apdcephfs/share_1364275/jiaqihan/atom3d/data/lep/data",
+    "model_save_path": "saved_models",
+    "precomputed": false,
+
+    "model": "GNN",
+    "n_layers": 4,
+    "earlystopping": 10,
+    "weight_decay": 1e-10,
+    "optimizer": "Adam",
+    "scheduler": "Plateau",
+    "eval_epoch": 1
+}
