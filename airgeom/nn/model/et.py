@@ -151,20 +151,23 @@ class EquivariantTransformer(nn.Module):
         x = self.embedding(z)
         pos = data.pos
         edge_index = data.edge_index
+        edge_index = edge_index[:, edge_index[0] != edge_index[1]]
         edge_vec = pos[edge_index[0]] - pos[edge_index[1]]
 
-        mask = edge_index[0] != edge_index[1]
-
-        edge_weight = torch.where(mask, torch.norm(edge_vec, dim=-1), torch.zeros(edge_vec.size(0), device=edge_vec.device))
+        edge_weight = torch.norm(edge_vec, dim=-1)
         
         edge_attr = self.cutoff_fn(edge_weight.unsqueeze(-1)) * self.distance_expansion(edge_weight)
         
-        edge_vec[mask] = edge_vec[mask] / edge_weight[mask].unsqueeze(1)
+        edge_vec = edge_vec / edge_weight.unsqueeze(1)
 
         if self.neighbor_embedding is not None:
             x = self.neighbor_embedding(z, x, edge_index, edge_weight, edge_attr)
 
-        vec = torch.zeros(x.size(0), 3, x.size(1), device=x.device)
+        # TODO: need discussions here
+        if hasattr(data,'v'):
+            vec = data.v.unsqueeze(-1).repeat(1,1,x.size(1))
+        else:
+            vec = torch.zeros(x.size(0), 3, x.size(1), device=x.device)
 
         for attn in self.attention_layers:
             dx, dvec = attn(x, vec, edge_index, edge_weight, edge_attr, edge_vec)
@@ -174,7 +177,7 @@ class EquivariantTransformer(nn.Module):
 
         data.h = x
         data.x = pos
-        data.v = vec
+        data.vec = vec
 
         return data
 

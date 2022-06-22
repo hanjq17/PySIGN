@@ -17,12 +17,13 @@ class EGNNLayer(nn.Module):
     :param residual: Whether using residual connection or not, default: True
     :param attention: Whether using attention in edge model or not, default: False
     :param normalize: Whether normalizing the coordinates messages , default: False
+    :param use_vel: Whether using velocities as inputs in dynamic simulation, default: False
     :param coords_agg: Message aggregation method for coordinates, default: 'mean'
     :param tanh: Whether using tanh at the output of phi_x(m_ij) , default: False
     """
 
     def __init__(self, input_nf, output_nf, hidden_nf, edges_in_d=0, act_fn=nn.SiLU(), residual=True,
-                 attention=False, normalize=False, coords_agg='mean', tanh=False):
+                 attention=False, normalize=False, use_vel=False, coords_agg='mean', tanh=False):
 
         super(EGNNLayer, self).__init__()
         input_edge = input_nf * 2
@@ -30,6 +31,7 @@ class EGNNLayer(nn.Module):
         self.attention = attention
         self.normalize = normalize
         self.coords_agg = coords_agg
+        self.use_vel = use_vel
         self.tanh = tanh
         self.epsilon = 1e-8
         edge_coords_nf = 1
@@ -60,6 +62,13 @@ class EGNNLayer(nn.Module):
             self.att_mlp = nn.Sequential(
                 nn.Linear(hidden_nf, 1),
                 nn.Sigmoid())
+
+        if self.use_vel:
+            self.coord_mlp_vel = nn.Sequential(
+                nn.Linear(input_nf, hidden_nf),
+                act_fn,
+                nn.Linear(hidden_nf, 1))
+        
 
     def edge_model(self, source, target, radial, edge_attr):
         """
@@ -142,7 +151,7 @@ class EGNNLayer(nn.Module):
 
         return radial, coord_diff
 
-    def forward(self, h, edge_index, coord, edge_attr=None, node_attr=None):
+    def forward(self, h, edge_index, coord, edge_attr=None, node_attr=None, vel=None):
         """
         The update of a layer.
 
@@ -158,6 +167,8 @@ class EGNNLayer(nn.Module):
 
         edge_feat = self.edge_model(h[row], h[col], radial, edge_attr)
         coord = self.coord_model(coord, edge_index, coord_diff, edge_feat)
+        if self.use_vel and vel is not None:
+            coord = coord + self.coord_mlp_vel(h) * vel
         h, agg = self.node_model(h, edge_index, edge_feat, node_attr)
 
         return h, coord, edge_attr
@@ -195,7 +206,7 @@ class RadialFieldLayer(nn.Module):
         row, col = edge_index
         edge_m = self.edge_model(x[row], x[col], edge_attr)
         x = self.node_model(x, edge_index, edge_m)
-        x += vel * self.coord_mlp_vel(vel_norm)
+        x = x + vel * self.coord_mlp_vel(vel_norm)
         return x, edge_attr
 
     def edge_model(self, source, target, edge_attr):
@@ -209,7 +220,10 @@ class RadialFieldLayer(nn.Module):
         """
         x_diff = source - target
         radial = torch.sqrt(torch.sum(x_diff ** 2, dim=1)).unsqueeze(1)
-        e_input = torch.cat([radial, edge_attr], dim=1)
+        if edge_attr is not None:
+            e_input = torch.cat([radial, edge_attr], dim=1)
+        else:
+            e_input = radial
         e_out = self.phi(e_input)
         m_ij = x_diff * e_out
         return m_ij

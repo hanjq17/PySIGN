@@ -1,5 +1,5 @@
 {
-        "exp_name": "QM9_EGNN",
+        "exp_name": "QM9",
         "batch_size": 128,
         "epoch": 300,
         "seed": 1,

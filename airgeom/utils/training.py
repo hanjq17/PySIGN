@@ -17,7 +17,7 @@ def get_optimizer(opt, lr, weight_decay, params):
 
 def get_scheduler(scheduler, opt, args):
     if scheduler == 'Plateau':
-        return ReduceLROnPlateau(optimizer=opt)
+        return ReduceLROnPlateau(optimizer=opt, factor=0.5, patience=20, verbose=True)
     else:
         raise NotImplementedError('Unknown scheduler', scheduler)
 
@@ -71,7 +71,7 @@ class StatsCollector(object):
 
 
 class SavingHandler(object):
-    def __init__(self, model, save_path, lower_is_better=True, max_instances=3):
+    def __init__(self, model, save_path, lower_is_better=True, max_instances=5):
         self.lower_is_better = lower_is_better
         self.max_instances = max_instances
         self.model = model
@@ -80,7 +80,8 @@ class SavingHandler(object):
 
     def __call__(self, epoch, metric):
         if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
+            # os.mkdir(self.save_path)
+            os.makedirs(self.save_path)
         if len(self.saved_models) >= self.max_instances:
             # pop the worst model
             os.remove(os.path.join(self.save_path, 'epoch_' + str(self.saved_models[0][0]) + '.pth'))
@@ -88,6 +89,15 @@ class SavingHandler(object):
         self.saved_models.append((epoch, metric))
         save_name = os.path.join(self.save_path, 'epoch_' + str(epoch) + '.pth')
         torch.save(self.model.state_dict(), save_name)
+
+    def load(self, epoch='best'):
+        models = os.listdir(self.save_path)
+        models = [_ for _ in models if 'epoch' in _]
+        epoch_idx = [int(_.split('_')[-1].split('.')[0]) for _ in models]
+        idx = np.argmax(epoch_idx)
+        best_model = models[idx]
+        self.model.load_state_dict(torch.load(os.path.join(self.save_path, best_model)))
+        print('Loaded from', os.path.join(self.save_path, best_model))
 
 
 class EarlyStopping(object):
@@ -107,5 +117,8 @@ class EarlyStopping(object):
             self.counter += 1
             if self.verbose:
                 print('Early Stopping counter:', self.counter)
+            if self.counter > self.max_times:
+                print('Early Stopping with patience', self.max_times, 'epochs, exit!')
+                exit(0)
         return better
 
