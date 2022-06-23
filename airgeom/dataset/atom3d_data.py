@@ -291,7 +291,7 @@ class Atom3DDataset(InMemoryDataset):
 
     multi_graph_tasks = ['LEP']
 
-    def __init__(self, root, task, split, transform=None, pre_transform=None, dataset_arg=None, num_workers=10):
+    def __init__(self, root, task, split, transform=None, pre_transform=None, dataset_arg=None, num_workers=1):
         
         self.task = task.lower()
         self.split = split
