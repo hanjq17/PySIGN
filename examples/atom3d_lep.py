@@ -13,7 +13,7 @@ import sys
 
 sys.path.append('.')
 from airgeom.nn.model.atom3d_model import GNN_LEP, MLP_LEP
-from airgeom.dataset.atom3d import CollaterLEP
+from airgeom.dataset.atom3d_data import CollaterLEP
 from atom3d.util.transforms import PairedGraphTransform
 from atom3d.datasets import LMDBDataset, PTGDataset
 from sklearn.metrics import roc_auc_score, average_precision_score

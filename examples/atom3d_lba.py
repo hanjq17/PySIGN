@@ -1,192 +1,62 @@
-import argparse
-import os
-import time
-import datetime
-
-import numpy as np
-import torch
-import torch.nn.functional as F
-from torch_geometric.data import DataLoader
 import sys
+sys.path.append('./')
+from airgeom.dataset import Atom3DDataset
+from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet
+from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
+from airgeom.trainer import Trainer
+from airgeom.task import Prediction
+import torch_geometric.transforms as T
+from torch_geometric.loader import DataLoader
+import torch
 
-sys.path.append('.')
-from airgeom.nn.model.atom3d_model import GNN_LBA
-from airgeom.dataset.atom3d import GNNTransformLBA
-from atom3d.datasets import LMDBDataset, PTGDataset
-from scipy.stats import spearmanr
-from airgeom.utils import load_params, set_seed
+torch.cuda.set_device(0)
 
-
-def train_loop(epoch, model, loader, optimizer, device):
-    model.train()
-    start = time.time()
-    loss_all = 0
-    total = 0
-    print_frequency = 50
-    for it, data in enumerate(loader):
-        data = data.to(device)
-        optimizer.zero_grad()
-        output = model(data.x, data.edge_index, data.edge_attr.view(-1), data.batch)
-        loss = F.mse_loss(output, data.y)
-        loss.backward()
-        loss_all += loss.item() * data.num_graphs
-        total += data.num_graphs
-        optimizer.step()
-
-        if it % print_frequency == 0:
-            elapsed = time.time() - start
-            print(
-                f'Epoch {epoch}, iter {it}, train loss {np.sqrt(loss.item())}, avg it/sec {print_frequency / elapsed}')
-            start = time.time()
-
-    return np.sqrt(loss_all / total)
+param_path = 'examples/configs/atom3d_lba.json'
+args = get_default_args()
+args = load_params(args, param_path=param_path)
+set_seed(args.seed)
 
 
-@torch.no_grad()
-def test(model, loader, device):
-    model.eval()
 
-    loss_all = 0
-    total = 0
-
-    y_true = []
-    y_pred = []
-
-    for data in loader:
-        data = data.to(device)
-        output = model(data.x, data.edge_index, data.edge_attr.view(-1), data.batch)
-        loss = F.mse_loss(output, data.y)
-        loss_all += loss.item() * data.num_graphs
-        total += data.num_graphs
-        y_true.extend(data.y.tolist())
-        y_pred.extend(output.tolist())
-
-    r_p = np.corrcoef(y_true, y_pred)[0, 1]
-    r_s = spearmanr(y_true, y_pred)[0]
-
-    print(f'\tRMSE {np.sqrt(loss_all / total)}, Pearson {r_p}, Spearman {r_s}')
-
-    return np.sqrt(loss_all / total), r_p, r_s, y_true, y_pred
+class SelectEdges(object):
+    def __init__(self, edges_between=True):
+        self.edges_between = edges_between
+    def __call__(self, data):
+        data.edge_attr = data.edge_attr.reshape(-1,1)
+        if not self.edges_between:
+            row, col = data.edge_index
+            ins = data.instance
+            mask = ins[row] == ins[col]
+            data.edge_index = data.edge_index[:,mask]
+            data.edge_attr = data.edge_attr[mask]
+        return data
 
 
-def save_weights(model, weight_dir):
-    torch.save(model.state_dict(), weight_dir)
+transform = SelectEdges()
+train_dataset = Atom3DDataset(root=args.data_path, task='lba',split='train',dataset_arg='sequence-identity-30',transform=transform)
+val_dataset = Atom3DDataset(root=args.data_path, task='lba',split='val',dataset_arg='sequence-identity-30',transform=transform)
+test_dataset = Atom3DDataset(root=args.data_path, task='lba',split='test',dataset_arg='sequence-identity-30',transform=transform)
+print('Data ready')
+# Normalize targets to mean = 0 and std = 1.
 
+# Split datasets.
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(args, device, log_dir, rep=None, test_mode=False):
-    # logger = logging.getLogger('lba')
-    # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
-    if args.precomputed:
-        train_dataset = PTGDataset(os.path.join(args.data_path, 'train'))
-        val_dataset = PTGDataset(os.path.join(args.data_path, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_path, 'val'))
-    else:
-        transform = GNNTransformLBA()
-        train_dataset = LMDBDataset(os.path.join(args.data_path, 'train'), transform=transform)
-        val_dataset = LMDBDataset(os.path.join(args.data_path, 'val'), transform=transform)
-        test_dataset = LMDBDataset(os.path.join(args.data_path, 'test'), transform=transform)
+rep_model = EGNN(in_node_nf=61, hidden_nf=args.hidden_dim, out_node_nf=args.hidden_dim, in_edge_nf=1,
+                  n_layers=args.n_layers)
+# rep_model = RadialField(hidden_nf=args.hidden_dim, edge_attr_nf=5, n_layers=args.n_layers)
+# rep_model = PaiNN(max_z=11, n_atom_basis=args.hidden_dim, n_interactions=args.n_layers)
+# rep_model = EquivariantTransformer(max_z=11, hidden_channels=args.hidden_dim, num_layers=args.n_layers)
+# rep_model = SchNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=args.hidden_dim)
+# Grad clip is needed if num_blocks is set to larger value
+# rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
 
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4)
-    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4)
+task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim)
+trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
-    for data in train_loader:
-        num_features = data.num_features
-        break
+trainer.loop()
 
-    model = GNN_LBA(num_features, hidden_dim=args.hidden_dim).to(device)
-    model.to(device)
-
-    best_val_loss = 999
-    best_rp = 0
-    best_rs = 0
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
-    for epoch in range(1, args.epoch + 1):
-        start = time.time()
-        train_loss = train_loop(epoch, model, train_loader, optimizer, device)
-        val_loss, r_p, r_s, y_true, y_pred = test(model, val_loader, device)
-        if val_loss < best_val_loss:
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': train_loss,
-            }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            # plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}.png'))
-            best_val_loss = val_loss
-            best_rp = r_p
-            best_rs = r_s
-        elapsed = (time.time() - start)
-        print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
-        print(
-            '\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(train_loss, val_loss,
-                                                                                                   r_p, r_s))
-
-    if test_mode:
-        train_file = os.path.join(log_dir, f'lba-rep{rep}.best.train.pt')
-        val_file = os.path.join(log_dir, f'lba-rep{rep}.best.val.pt')
-        test_file = os.path.join(log_dir, f'lba-rep{rep}.best.test.pt')
-        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-        model.load_state_dict(cpt['model_state_dict'])
-        _, _, _, y_true_train, y_pred_train = test(model, train_loader, device)
-        torch.save({'targets': y_true_train, 'predictions': y_pred_train}, train_file)
-        _, _, _, y_true_val, y_pred_val = test(model, val_loader, device)
-        torch.save({'targets': y_true_val, 'predictions': y_pred_val}, val_file)
-        rmse, pearson, spearman, y_true_test, y_pred_test = test(model, test_loader, device)
-        print(f'\tTest RMSE {rmse}, Test Pearson {pearson}, Test Spearman {spearman}')
-        torch.save({'targets': y_true_test, 'predictions': y_pred_test}, test_file)
-
-    return best_val_loss, best_rp, best_rs
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str)
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--hidden_dim', type=int, default=64)
-    parser.add_argument('--epoch', type=int, default=100)
-    parser.add_argument('--lr', type=float, default=1e-5)  # 1e-5
-    parser.add_argument('--model_save_path', type=str, default=None)
-    parser.add_argument('--seqid', type=int, default=30)
-    parser.add_argument('--precomputed', type=bool, default=False)
-    args = parser.parse_args()
-
-    param_path = 'examples/configs/atom3d_lba.json'
-    args = load_params(args, param_path=param_path)
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    log_dir = args.model_save_path
-    set_seed(args.seed)
-
-    if args.mode == 'train':
-        if log_dir is None:
-            now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            log_dir = os.path.join('logs', now)
-        else:
-            log_dir = os.path.join('logs', log_dir)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        train(args, device, log_dir)
-
-    elif args.mode == 'test':
-        seed = 99
-        print('seed:', seed)
-        assert log_dir is not None
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        train(args, device, log_dir, rep=None, test_mode=True)
-
-        # for rep, seed in enumerate(np.random.randint(0, 1000, size=3)):
-        #     print('seed:', seed)
-        #     log_dir = os.path.join('logs', f'lba_test_{args.seqid}')
-        #     if not os.path.exists(log_dir):
-        #         os.makedirs(log_dir)
-        #     np.random.seed(seed)
-        #     torch.manual_seed(seed)
-        #     train(args, device, log_dir, rep, test_mode=True)
