@@ -16,13 +16,14 @@ class DynamicsTrainer(Trainer):
         cur_loss = []
         all_pred = []
         cur_pred = []
+        x_pred, v_pred = None, None
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
             x_true = batch_data.pos + batch_data.pred
             if step % self.rollout_step > 0:
                 batch_data.v = v_pred
                 batch_data.pos = x_pred
-            v_pred, loss = self.task(batch_data)
+            v_pred, loss, v_label = self.task(batch_data)
             x_pred = (batch_data.pos + v_pred).detach()
             v_pred = v_pred.detach()
             if self.save_pred:

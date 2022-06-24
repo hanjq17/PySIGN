@@ -19,7 +19,7 @@ class BasicTask(Module):
         """
         raise NotImplementedError()
 
-    def get_loss(self):
+    def get_loss(self, loss):
         """
         Instantiate the loss module.
 

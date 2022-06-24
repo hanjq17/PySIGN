@@ -1,3 +1,3 @@
 from .prediction import Prediction
-from .trajectory_prediction import TrajectoryPrediction
-
+from .dynamics import TrajectoryPrediction
+from .contrastive import Contrastive

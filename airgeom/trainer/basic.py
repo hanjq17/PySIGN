@@ -20,9 +20,12 @@ class Trainer(object):
     def train_epoch(self):
         train_loader = self.dataloaders.get('train')
         for step, batch_data in enumerate(train_loader):
-            batch_data = batch_data.to(self.device)
+            if isinstance(batch_data, list):
+                batch_data = [_.to(self.device) for _ in batch_data]
+            else:
+                batch_data = batch_data.to(self.device)
             self.optimizer.zero_grad()
-            _, loss = self.task(batch_data)
+            _, loss, y = self.task(batch_data)
             self.stats.update_step({'train_loss': loss})
             loss = loss.mean()
             loss.backward()
@@ -38,7 +41,7 @@ class Trainer(object):
             batch_data = batch_data.to(self.device)
             _, loss = self.task(batch_data)
             all_loss.append(loss.detach().cpu().numpy())
-        return self.stats.get_averaged_loss(all_loss)
+        return {'loss': self.stats.get_averaged_loss(all_loss)}
 
     def loop(self):
         for ep in range(self.args.epoch):
@@ -47,23 +50,39 @@ class Trainer(object):
             train_loss = self.stats.get_train_loss()
 
             if ep % self.args.eval_epoch == 0:
-                val_loss = self.evaluate(valid=True)
+                val_result = self.evaluate(valid=True)
+                val_loss = val_result.get('loss')
                 if self.scheduler is not None:
                     self.scheduler.step(metrics=val_loss)
                 better = self.early_stopping(val_loss)
                 if better:
                     self.model_saver(ep, val_loss)
                 if self.test:
-                    test_loss = self.evaluate(valid=False)
+                    test_result = self.evaluate(valid=False)
                 else:
-                    test_loss = 0.0
+                    test_result = None
             else:
-                val_loss, test_loss = None, None
-            stats = {'train_loss': train_loss, 'val_loss': val_loss, 'test_loss': test_loss}
+                val_result, test_result = None, None
+            stats = {'train_loss': train_loss}
+            if val_result is not None:
+                for metric in val_result:
+                    stats['val_' + metric] = val_result[metric]
+            if test_result is not None:
+                for metric in test_result:
+                    stats['test_' + metric] = test_result[metric]
             self.stats.update_epoch(stats)
-            print('Epoch: {:4d} | LR: {:.6f} | Train Loss: {:.6f} | '
-                  'Val Loss {:.6f} | Test Loss {:.6f}'.format(ep, self.optimizer.param_groups[0]['lr'],
-                                                              train_loss, val_loss, test_loss))
+            print('Epoch: {:4d} | LR: {:.6f} | Train Loss: {:.6f}'.
+                  format(ep, self.optimizer.param_groups[0]['lr'], train_loss))
+            if val_result is not None:
+                print('Val ', end=' ')
+                for metric in val_result:
+                    print('{}: {:.6f}'.format(metric, val_result[metric]), end=' ')
+                print()
+            if test_result is not None:
+                print('Test', end=' ')
+                for metric in test_result:
+                    print('{}: {:.6f}'.format(metric, test_result[metric]), end=' ')
+                print()
 
         print('Finished!')
 
