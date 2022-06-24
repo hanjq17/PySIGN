@@ -6,7 +6,6 @@ from atom3d.util.transforms import prot_graph_transform, mol_graph_transform, Pa
 from atom3d.datasets import LMDBDataset
 from torch_geometric.data import Data, Batch, DataLoader, InMemoryDataset
 from torch_geometric.data.separate import separate
-import atom3d.util.graph as gr
 import subprocess
 import scipy.spatial as ss
 import os.path as osp
@@ -15,7 +14,8 @@ from joblib import Parallel, delayed
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
-    """Combine two graphs into one, optionally adding edges between the two graphs using :func:`atom3d.util.graph.edges_between_graphs`. Node features are concatenated in the feature dimension, to distinguish which nodes came from which graph.
+    """Combine two graphs into one, optionally adding edges between the two graphs using :func:`atom3d.util.graph.edges_between_graphs`.
+    Node features are concatenated in the feature dimension, to distinguish which nodes came from which graph.
 
     :param graph1: One of the graphs to be combined, in the format returned by :func:`atom3d.util.graph.prot_df_to_graph` or :func:`atom3d.util.graph.mol_df_to_graph`.
     :type graph1: Tuple
@@ -127,57 +127,9 @@ class GNNTransformLBA(object):
         # transform ligand into PTG graph
         item = mol_graph_transform(item, 'atoms_ligand', 'scores', use_bonds=True, onehot_edges=False)
         node_feats, edges, edge_feats, node_pos, node_mask = combine_graphs(item['atoms_pocket'], item['atoms_ligand'])
-        combined_graph = Data(node_feats, edges, edge_feats, y=item['scores']['neglog_aff'], pos=node_pos, instance=node_mask)
+        combined_graph = Data(node_feats, edges, edge_feats, y=item['scores']['neglog_aff'], pos=node_pos,
+                              instance=node_mask)
         return combined_graph
-
-
-def preprocess_lba():
-    # TODO: save dir data dir seqid -> args
-    seqid = 30  # 30 or 60
-    save_dir = '/scratch/users/aderry/atom3d/lba_' + str(seqid)
-    data_dir = f'/scratch/users/raphtown/atom3d_mirror/lmdb/LBA/splits/split-by-sequence-identity-{seqid}/data'
-    os.makedirs(os.path.join(save_dir, 'train'), exist_ok=True)
-    os.makedirs(os.path.join(save_dir, 'val'), exist_ok=True)
-    os.makedirs(os.path.join(save_dir, 'test'), exist_ok=True)
-    train_dataset = LMDBDataset(os.path.join(data_dir, 'train'), transform=GNNTransformLBA())
-    val_dataset = LMDBDataset(os.path.join(data_dir, 'val'), transform=GNNTransformLBA())
-    test_dataset = LMDBDataset(os.path.join(data_dir, 'test'), transform=GNNTransformLBA())
-
-    print('processing train dataset...')
-    for i, item in enumerate(tqdm(train_dataset)):
-        torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
-
-    print('processing validation dataset...')
-    for i, item in enumerate(tqdm(val_dataset)):
-        torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
-
-    print('processing test dataset...')
-    for i, item in enumerate(tqdm(test_dataset)):
-        torch.save(item, os.path.join(save_dir, 'test', f'data_{i}.pt'))
-
-
-def preprocess_lep():
-    save_dir = '/scratch/users/aderry/atom3d/lep'
-    data_dir = '/scratch/users/raphtown/atom3d_mirror/lmdb/LEP/splits/split-by-protein/data'
-    os.makedirs(os.path.join(save_dir, 'train'), exist_ok=True)
-    os.makedirs(os.path.join(save_dir, 'val'), exist_ok=True)
-    os.makedirs(os.path.join(save_dir, 'test'), exist_ok=True)
-    transform = PairedGraphTransform('atoms_active', 'atoms_inactive', label_key='label')
-    train_dataset = LMDBDataset(os.path.join(data_dir, 'train'), transform=transform)
-    val_dataset = LMDBDataset(os.path.join(data_dir, 'val'), transform=transform)
-    test_dataset = LMDBDataset(os.path.join(data_dir, 'test'), transform=transform)
-
-    print('processing train dataset...')
-    for i, item in enumerate(tqdm(train_dataset)):
-        torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
-
-    print('processing validation dataset...')
-    for i, item in enumerate(tqdm(val_dataset)):
-        torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
-
-    print('processing test dataset...')
-    for i, item in enumerate(tqdm(test_dataset)):
-        torch.save(item, os.path.join(save_dir, 'test', f'data_{i}.pt'))
 
 
 def download_dataset(name, out_path, split=None):
@@ -232,7 +184,8 @@ def download_dataset(name, out_path, split=None):
         elif split == 'sequence-identity-60':
             link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-60.tar.gz?download=1'
         else:
-            print(f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
+            print(
+                f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
             return
     elif name == 'lep':
         if split is None:
@@ -270,18 +223,20 @@ def download_dataset(name, out_path, split=None):
     print(cmd2)
     # subprocess.call(cmd2, shell=True)
 
+
 def iter_samples(lmdb, idx):
     return lmdb[idx]
+
 
 def get_preprocessed_list(lmdb, num_workers):
     res = []
     if num_workers == 1:
-        for i,item in enumerate(tqdm(lmdb)):
+        for i, item in enumerate(tqdm(lmdb)):
             res.append(item)
         return res
-    res = Parallel(n_jobs=num_workers, backend='threading')(delayed(iter_samples)(lmdb,idx) for idx in tqdm(range(len(lmdb))))
+    res = Parallel(n_jobs=num_workers, backend='threading')(
+        delayed(iter_samples)(lmdb, idx) for idx in tqdm(range(len(lmdb))))
     return res
-
 
 
 class Atom3DDataset(InMemoryDataset):
@@ -293,7 +248,7 @@ class Atom3DDataset(InMemoryDataset):
     multi_graph_tasks = ['lep']
 
     def __init__(self, root, task, split, transform=None, pre_transform=None, dataset_arg=None, num_workers=1):
-        
+
         self.task = task.lower()
         self.split = split
         self.dataset_arg = dataset_arg
@@ -306,7 +261,6 @@ class Atom3DDataset(InMemoryDataset):
         if self.task in Atom3DDataset.multi_graph_tasks:
             self.data1, self.data2 = self.data
             self.slices1, self.slices2 = self.slices
-
 
     def len(self):
         if self.task in Atom3DDataset.multi_graph_tasks:
@@ -323,7 +277,7 @@ class Atom3DDataset(InMemoryDataset):
             slice_dict=slices,
             decrement=False,
         )
-        return data  
+        return data
 
     def get(self, idx: int):
 
@@ -338,13 +292,12 @@ class Atom3DDataset(InMemoryDataset):
                 data1 = self.sep(self.data1, self.slices1, idx)
                 data2 = self.sep(self.data2, self.slices2, idx)
                 data = (data1, data2)
-            else:                  
+            else:
                 data = self.sep(self.data, self.slices, idx)
 
             self._data_list[idx] = copy.copy(data)
 
         return data
-
 
     def get_pre_transform(self):
         name = self.task
@@ -411,7 +364,8 @@ class Atom3DDataset(InMemoryDataset):
             elif split == 'sequence-identity-60':
                 link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-60.tar.gz?download=1'
             else:
-                print(f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
+                print(
+                    f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
                 link = ""
         elif name == 'lep':
             if split is None:
@@ -453,13 +407,15 @@ class Atom3DDataset(InMemoryDataset):
         return [f'{split}.pt' for split in ['train', 'val', 'test']]
 
     def download(self):
-        """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
+        """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR.
+        Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
 
         :param name: Three-letter code for dataset (not case-sensitive).
         :type name: str
         :param out_path: Path to directory in which to save downloaded dataset.
         :type out_path: str
-        :param split: name of split data to download in LMDB format. Defaults to None, in which case raw (unsplit) dataset is downloaded. Please use :func:`download_split_indices` to get pre-computed split indices for raw datasets.
+        :param split: name of split data to download in LMDB format. Defaults to None, in which case raw (unsplit)
+        dataset is downloaded. Please use :func:`download_split_indices` to get pre-computed split indices for raw datasets.
         :type split: str
         """
         link = self.download_url
@@ -470,8 +426,7 @@ class Atom3DDataset(InMemoryDataset):
         cmd = f"wget {link} -O {out_path}/{name}"
         subprocess.call(cmd, shell=True)
         cmd2 = f"tar xzvf {out_path}/{name} -C {out_path}"
-        subprocess.call(cmd2, shell=True)        
-
+        subprocess.call(cmd2, shell=True)
 
     def process(self):
         data_dir = self.lmdb_file_dir
@@ -487,7 +442,7 @@ class Atom3DDataset(InMemoryDataset):
                     samples2.append(item2)
                 data1, slices1 = self.collate(samples1)
                 data2, slices2 = self.collate(samples2)
-                torch.save(((data1, data2), (slices1, slices2)), osp.join(save_dir, f'{split}.pt')) 
+                torch.save(((data1, data2), (slices1, slices2)), osp.join(save_dir, f'{split}.pt'))
         else:
             for split in ['train', 'val', 'test']:
                 print(f"Preprocessing {split} data for {self.task} task ...")
@@ -497,7 +452,7 @@ class Atom3DDataset(InMemoryDataset):
                     samples.append(item)
                 # samples = get_preprocessed_list(dataset,self.num_workers)
                 data, slices = self.collate(samples)
-                torch.save((data, slices), osp.join(save_dir, f'{split}.pt')) 
+                torch.save((data, slices), osp.join(save_dir, f'{split}.pt'))
         print("Preprocess done!")
 
 
