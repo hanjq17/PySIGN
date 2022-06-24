@@ -91,7 +91,7 @@ class TrajectoryPrediction(BasicTask):
             )[0]
             output = dy + dt * data.v
         loss = self.loss(output, data.pred).sum(dim=-1)
-        return output, loss
+        return output, loss, data.pred
 
 
 

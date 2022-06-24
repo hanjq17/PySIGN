@@ -23,7 +23,7 @@ class DynamicsTrainer(Trainer):
             if step % self.rollout_step > 0:
                 batch_data.v = v_pred
                 batch_data.pos = x_pred
-            v_pred, loss = self.task(batch_data)
+            v_pred, loss, v_label = self.task(batch_data)
             x_pred = (batch_data.pos + v_pred).detach()
             v_pred = v_pred.detach()
             if self.save_pred:

@@ -15,10 +15,9 @@ class PredictionTrainer(Trainer):
         all_res = []
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
-            pred, loss = self.task(batch_data)
+            pred, loss, y = self.task(batch_data)
             if len(pred) == 2:
                 pred = pred.squeeze(-1)
-            y = batch_data.y
             if len(y) == 2:
                 y = y.squeeze(-1)
             all_loss.append(loss.detach().cpu().numpy())

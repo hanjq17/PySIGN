@@ -40,11 +40,11 @@ class Prediction(BasicTask):
         elif loss == 'MSE':
             loss = MSELoss(reduction='none')
             assert self.task_type == 'Regression'
-        elif loss == 'CE':
-            loss = CrossEntropyLoss(reduction='none')
-            assert self.task_type == 'BinaryClassification'
         elif loss == 'BCE':
             loss = BCELoss(reduction='none')
+            assert self.task_type == 'BinaryClassification'
+        elif loss == 'CE':
+            loss = CrossEntropyLoss(reduction='none')
             assert self.task_type == 'MultiClassification'
         else:
             raise NotImplementedError('Unknown loss type', loss)
@@ -77,7 +77,7 @@ class Prediction(BasicTask):
         else:
             y = data.y
         loss = self.loss(output, y)
-        return output, loss
+        return output, loss, y
 
 
 

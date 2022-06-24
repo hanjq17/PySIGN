@@ -22,7 +22,7 @@ class Trainer(object):
         for step, batch_data in enumerate(train_loader):
             batch_data = batch_data.to(self.device)
             self.optimizer.zero_grad()
-            _, loss = self.task(batch_data)
+            _, loss, y = self.task(batch_data)
             self.stats.update_step({'train_loss': loss})
             loss = loss.mean()
             loss.backward()
