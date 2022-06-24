@@ -1,218 +1,58 @@
-import argparse
-import os
-import time
-import datetime
-
-import numpy as np
-import torch
-import torch.nn as nn
-from torch_geometric.data import DataLoader as PTGDataLoader
-from torch.utils.data import DataLoader
-
 import sys
+sys.path.append('./')
+from airgeom.dataset import Atom3DDataset
+from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet
+from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
+from airgeom.trainer import PredictionTrainer
+from airgeom.task import Contrastive
+import torch_geometric.transforms as T
+from torch_geometric.loader import DataLoader
+import torch
 
-sys.path.append('.')
-from airgeom.nn.model.atom3d_model import GNN_LEP, MLP_LEP
-from airgeom.dataset.atom3d_data import CollaterLEP
-from atom3d.util.transforms import PairedGraphTransform
-from atom3d.datasets import LMDBDataset, PTGDataset
-from sklearn.metrics import roc_auc_score, average_precision_score
-from airgeom.utils import load_params, set_seed
+torch.cuda.set_device(0)
 
-
-def train_loop(epoch, gcn_model, ff_model, loader, criterion, optimizer, device):
-    gcn_model.train()
-    ff_model.train()
-
-    start = time.time()
-
-    losses = []
-    total = 0
-    print_frequency = 10
-    for it, (active, inactive) in enumerate(loader):
-        labels = torch.FloatTensor([a == 'A' for a in active.y]).to(device)
-        active = active.to(device)
-        inactive = inactive.to(device)
-        optimizer.zero_grad()
-        out_active = gcn_model(active.x, active.edge_index, active.edge_attr.view(-1), active.batch)
-        out_inactive = gcn_model(inactive.x, inactive.edge_index, inactive.edge_attr.view(-1), inactive.batch)
-        output = ff_model(out_active, out_inactive)
-        loss = criterion(output, labels)
-        loss.backward()
-        # loss_all += loss.item() * active.num_graphs
-        # total += active.num_graphs
-        losses.append(loss.item())
-        optimizer.step()
-
-        if it % print_frequency == 0:
-            elapsed = time.time() - start
-            print(f'Epoch {epoch}, iter {it}, train loss {np.mean(losses)}, avg it/sec {print_frequency / elapsed}')
-            start = time.time()
-
-    return np.mean(losses)
+param_path = 'examples/configs/atom3d_lep.json'
+args = get_default_args()
+args = load_params(args, param_path=param_path)
+set_seed(args.seed)
 
 
-@torch.no_grad()
-def test(gcn_model, ff_model, loader, criterion, device):
-    gcn_model.eval()
-    ff_model.eval()
 
-    losses = []
-    total = 0
-    print_frequency = 10
-
-    y_true = []
-    y_pred = []
-
-    for it, (active, inactive) in enumerate(loader):
-        labels = torch.FloatTensor([a == 'A' for a in active.y]).to(device)
-        active = active.to(device)
-        inactive = inactive.to(device)
-        out_active = gcn_model(active.x, active.edge_index, active.edge_attr.view(-1), active.batch)
-        out_inactive = gcn_model(inactive.x, inactive.edge_index, inactive.edge_attr.view(-1), inactive.batch)
-        output = ff_model(out_active, out_inactive)
-        loss = criterion(output, labels)
-        # loss_all += loss.item() * active.num_graphs
-        # total += active.num_graphs
-        losses.append(loss.item())
-        y_true.extend(labels.tolist())
-        y_pred.extend(torch.sigmoid(output).tolist())
-        if it % print_frequency == 0:
-            print(f'iter {it}, loss {np.mean(losses)}')
-
-    y_true = np.array(y_true)
-    y_pred = np.array(y_pred)
-    auroc = roc_auc_score(y_true, y_pred)
-    auprc = average_precision_score(y_true, y_pred)
-    print(f'\tLoss {np.mean(losses)}, AUROC {auroc}, auprc {auprc}')
-
-    return np.mean(losses), auroc, auprc, y_true, y_pred
+class LEPProcess(object):
+    def __call__(self, data):
+        data1, data2 = data
+        data1.edge_attr = data1.edge_attr.reshape(-1,1)
+        data2.edge_attr = data2.edge_attr.reshape(-1,1)
+        if isinstance(data1.y, str):
+            data1.y = torch.FloatTensor([data1.y == 'A']) 
+        return data1, data2
 
 
-def save_weights(model, weight_dir):
-    torch.save(model.state_dict(), weight_dir)
+transform = LEPProcess()
+train_dataset = Atom3DDataset(root=args.data_path, task='lep',split='train',dataset_arg='protein',transform=transform)
+val_dataset = Atom3DDataset(root=args.data_path, task='lep',split='val',dataset_arg='protein',transform=transform)
+test_dataset = Atom3DDataset(root=args.data_path, task='lep',split='test',dataset_arg='protein',transform=transform)
+print('Data ready')
+# Normalize targets to mean = 0 and std = 1.
 
+# Split datasets.
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(args, device, log_dir, rep=None, test_mode=False):
-    # logger = logging.getLogger('lba')
-    # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
-    transform = PairedGraphTransform('atoms_active', 'atoms_inactive', label_key='label')
-    if args.precomputed:
-        train_dataset = PTGDataset(os.path.join(args.data_path, 'train'))
-        val_dataset = PTGDataset(os.path.join(args.data_path, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_path, 'val'))
-        train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, collate_fn=CollaterLEP())
-        val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4, collate_fn=CollaterLEP())
-        test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, collate_fn=CollaterLEP())
-    else:
-        train_dataset = LMDBDataset(os.path.join(args.data_path, 'train'), transform=transform)
-        val_dataset = LMDBDataset(os.path.join(args.data_path, 'val'), transform=transform)
-        test_dataset = LMDBDataset(os.path.join(args.data_path, 'test'), transform=transform)
+rep_model = EGNN(in_node_nf=18, hidden_nf=args.hidden_dim, out_node_nf=args.hidden_dim, in_edge_nf=1,
+                  n_layers=args.n_layers)
+# rep_model = RadialField(hidden_nf=args.hidden_dim, edge_attr_nf=5, n_layers=args.n_layers)
+# rep_model = PaiNN(max_z=11, n_atom_basis=args.hidden_dim, n_interactions=args.n_layers)
+# rep_model = EquivariantTransformer(max_z=11, hidden_channels=args.hidden_dim, num_layers=args.n_layers)
+# rep_model = SchNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=args.hidden_dim)
+# Grad clip is needed if num_blocks is set to larger value
+# rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
 
-        train_loader = PTGDataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4)
-        val_loader = PTGDataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4)
-        test_loader = PTGDataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4)
+task = Contrastive(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='BinaryClassification', loss='BCE')
+trainer = PredictionTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
-    for active, inactive in train_loader:
-        num_features = active.num_features
-        break
+trainer.loop()
 
-    gcn_model = GNN_LEP(num_features, hidden_dim=args.hidden_dim).to(device)
-    gcn_model.to(device)
-    ff_model = MLP_LEP(args.hidden_dim).to(device)
-
-    best_val_loss = 999
-    best_val_auroc = 0
-
-    params = [x for x in gcn_model.parameters()] + [x for x in ff_model.parameters()]
-
-    criterion = nn.BCELoss()
-    criterion.to(device)
-    optimizer = torch.optim.Adam(params, lr=args.lr)
-    print('start training')
-    for epoch in range(1, args.epoch + 1):
-        start = time.time()
-        train_loss = train_loop(epoch, gcn_model, ff_model, train_loader, criterion, optimizer, device)
-        print('validating...')
-        val_loss, auroc, auprc, _, _ = test(gcn_model, ff_model, val_loader, criterion, device)
-        if auroc > best_val_auroc:
-            torch.save({
-                'epoch': epoch,
-                'gcn_state_dict': gcn_model.state_dict(),
-                'ff_state_dict': ff_model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': train_loss,
-            }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            best_val_auroc = auroc
-        elapsed = (time.time() - start)
-        print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
-        print(f'\tTrain loss {train_loss}, Val loss {val_loss}, Val AUROC {auroc}, Val auprc {auprc}')
-
-    if test_mode:
-        train_file = os.path.join(log_dir, f'lep-rep{rep}.best.train.pt')
-        val_file = os.path.join(log_dir, f'lep-rep{rep}.best.val.pt')
-        test_file = os.path.join(log_dir, f'lep-rep{rep}.best.test.pt')
-        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-        gcn_model.load_state_dict(cpt['gcn_state_dict'])
-        ff_model.load_state_dict(cpt['ff_state_dict'])
-        _, _, _, y_true_train, y_pred_train = test(gcn_model, ff_model, train_loader, criterion, device)
-        torch.save({'targets': y_true_train, 'predictions': y_pred_train}, train_file)
-        _, _, _, y_true_val, y_pred_val = test(gcn_model, ff_model, val_loader, criterion, device)
-        torch.save({'targets': y_true_val, 'predictions': y_pred_val}, val_file)
-        test_loss, auroc, auprc, y_true_test, y_pred_test = test(gcn_model, ff_model, test_loader, criterion, device)
-        print(f'\tTest loss {test_loss}, Test AUROC {auroc}, Test auprc {auprc}')
-        torch.save({'targets': y_true_test, 'predictions': y_pred_test}, test_file)
-
-        return test_loss, auroc, auprc
-
-    return best_val_loss
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str)
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--batch_size', type=int, default=4)
-    parser.add_argument('--hidden_dim', type=int, default=64)
-    parser.add_argument('--epoch', type=int, default=20)
-    parser.add_argument('--lr', type=float, default=1e-5)  # 1e-5
-    parser.add_argument('--model_save_path', type=str, default=None)
-    parser.add_argument('--precomputed', type=bool, default=False)
-    args = parser.parse_args()
-
-    param_path = 'examples/configs/atom3d_lep.json'
-    args = load_params(args, param_path=param_path)
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    log_dir = args.model_save_path
-    set_seed(args.seed)
-
-    if args.mode == 'train':
-        if log_dir is None:
-            now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            log_dir = os.path.join('logs', now)
-        else:
-            log_dir = os.path.join('logs', log_dir)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        train(args, device, log_dir)
-
-    elif args.mode == 'test':
-        seed = 10
-        print('seed:', seed)
-        assert log_dir is not None
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        train(args, device, log_dir, rep=None, test_mode=True)
-
-        # for rep, seed in enumerate(np.random.randint(0, 1000, size=3)):
-        #     print('seed:', seed)
-        #     log_dir = os.path.join('logs', f'lep_test')
-        #     if not os.path.exists(log_dir):
-        #         os.makedirs(log_dir)
-        #     np.random.seed(seed)
-        #     torch.manual_seed(seed)
-        #     train(args, device, log_dir, rep, test_mode=True)

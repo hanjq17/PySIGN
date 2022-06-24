@@ -5,11 +5,12 @@ from tqdm import tqdm
 from atom3d.util.transforms import prot_graph_transform, mol_graph_transform, PairedGraphTransform
 from atom3d.datasets import LMDBDataset
 from torch_geometric.data import Data, Batch, DataLoader, InMemoryDataset
+from torch_geometric.data.separate import separate
 import atom3d.util.graph as gr
 import subprocess
 import scipy.spatial as ss
 import os.path as osp
-
+import copy
 from joblib import Parallel, delayed
 
 
@@ -314,22 +315,36 @@ class Atom3DDataset(InMemoryDataset):
             slices = self.slices
         return len(slices[list(slices.keys())[0]]) - 1
 
-    def get(self, idx):
-        if self.task in Atom3DDataset.multi_graph_tasks:
-            self.data, self.slices = self.data1, self.slices1
-            data1 = super(Atom3DDataset, self).get(idx)
-            self.data, self.slices = self.data2, self.slices2
-            data2 = super(Atom3DDataset, self).get(idx)     
-            if self.transform:
-                return self.transform(data1), self.transform(data2)
-            else:
-                return data1, data2
-        else:                  
-            data = super(Atom3DDataset, self).get(idx)
-            if self.transform:
-                return self.transform(data)
-            else:
-                return data
+    def sep(self, data, slices, idx):
+        data = separate(
+            cls=data.__class__,
+            batch=data,
+            idx=idx,
+            slice_dict=slices,
+            decrement=False,
+        )
+        return data  
+
+    def get(self, idx: int):
+
+        if not hasattr(self, '_data_list') or self._data_list is None:
+            self._data_list = self.len() * [None]
+
+        if self._data_list[idx] is not None:
+            data = copy.copy(self._data_list[idx])
+
+        else:
+            if self.task in Atom3DDataset.multi_graph_tasks:
+                data1 = self.sep(self.data1, self.slices1, idx)
+                data2 = self.sep(self.data2, self.slices2, idx)
+                data = (data1, data2)
+            else:                  
+                data = self.sep(self.data, self.slices, idx)
+
+            self._data_list[idx] = copy.copy(data)
+
+        return data
+
 
     def get_pre_transform(self):
         name = self.task

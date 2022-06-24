@@ -4,7 +4,7 @@ from .prediction import Prediction
 import torch
 
 
-class Constrastive(Prediction):
+class Contrastive(Prediction):
     """
     The constrastive task.
 
@@ -13,8 +13,8 @@ class Constrastive(Prediction):
     :param rep_dim: the dimension of the representation.
     """
     def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE'):
-        self.activation = nn.ReLU()  # TODO: use args as activation
-        super(Constrastive, self).__init__(rep, output_dim, rep_dim, task_type, loss)
+        super(Contrastive, self).__init__(rep, output_dim, rep_dim, task_type, loss)
+        # self.activation = nn.ReLU()  # TODO: use args as activation
 
     def get_decoder(self):
         """
@@ -24,7 +24,7 @@ class Constrastive(Prediction):
         """
         decoder = nn.Sequential(
             nn.Linear(self.rep_dim * 2, self.rep_dim * 2),
-            self.activation,
+            nn.ReLU(),
             nn.Linear(self.rep_dim * 2, 1),
             nn.Sigmoid()
         )
@@ -41,8 +41,9 @@ class Constrastive(Prediction):
         data1, data2 = data
         rep1, rep2 = self.rep(data1), self.rep(data2)
         rep1, rep2 = global_mean_pool(rep1.h, data1.batch), global_mean_pool(rep2.h, data2.batch)
-        rep = torch.cat((rep1.h, rep2.h), dim=-1)
+        rep = torch.cat((rep1, rep2), dim=-1)
         pred = self.decoder(rep)
+        pred = pred.squeeze(-1)
         loss = self.loss(pred, data1.y)
         return pred, loss, data1.y
 

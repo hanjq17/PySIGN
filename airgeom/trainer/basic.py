@@ -20,7 +20,10 @@ class Trainer(object):
     def train_epoch(self):
         train_loader = self.dataloaders.get('train')
         for step, batch_data in enumerate(train_loader):
-            batch_data = batch_data.to(self.device)
+            if isinstance(batch_data, list):
+                batch_data = [_.to(self.device) for _ in batch_data]
+            else:
+                batch_data = batch_data.to(self.device)
             self.optimizer.zero_grad()
             _, loss, y = self.task(batch_data)
             self.stats.update_step({'train_loss': loss})

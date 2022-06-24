@@ -14,7 +14,10 @@ class PredictionTrainer(Trainer):
         all_loss = []
         all_res = []
         for step, batch_data in enumerate(loader):
-            batch_data = batch_data.to(self.device)
+            if isinstance(batch_data, list):
+                batch_data = [_.to(self.device) for _ in batch_data]
+            else:
+                batch_data = batch_data.to(self.device)
             pred, loss, y = self.task(batch_data)
             if len(pred) == 2:
                 pred = pred.squeeze(-1)
