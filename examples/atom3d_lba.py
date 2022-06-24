@@ -3,7 +3,7 @@ sys.path.append('./')
 from airgeom.dataset import Atom3DDataset
 from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet
 from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
-from airgeom.trainer import Trainer
+from airgeom.trainer import PredictionTrainer
 from airgeom.task import Prediction
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
@@ -55,8 +55,8 @@ rep_model = EGNN(in_node_nf=61, hidden_nf=args.hidden_dim, out_node_nf=args.hidd
 # Grad clip is needed if num_blocks is set to larger value
 # rep_model = DimeNet(in_node_nf=11, out_node_nf=args.hidden_dim, hidden_nf=64, num_blocks=1)
 
-task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim)
-trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
+task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MSE')
+trainer = PredictionTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
 trainer.loop()
 

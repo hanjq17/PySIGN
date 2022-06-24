@@ -16,6 +16,7 @@ class DynamicsTrainer(Trainer):
         cur_loss = []
         all_pred = []
         cur_pred = []
+        x_pred, v_pred = None, None
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
             x_true = batch_data.pos + batch_data.pred

@@ -14,13 +14,14 @@ class TrajectoryPrediction(BasicTask):
     :param output_dim: the output dimension for computing loss.
     :param rep_dim: the dimension of the representation.
     """
-    def __init__(self, rep, rep_dim, decoder_type='DifferentialVector'):
+    def __init__(self, rep, rep_dim, decoder_type='DifferentialVector', task_type='Regression', loss='MAE'):
         super(TrajectoryPrediction, self).__init__(rep)
         self.rep_dim = rep_dim
-        assert decoder_type in ['Scalar','EquivariantScalar','DifferentialVector','EquivariantVector']
+        self.task_type = task_type
+        assert decoder_type in ['Scalar', 'EquivariantScalar', 'DifferentialVector', 'EquivariantVector']
         self.decoder_type = decoder_type
         self.decoder = self.get_decoder()
-        self.loss = self.get_loss()
+        self.loss = self.get_loss(loss)
 
     def get_decoder(self):
         """
@@ -40,13 +41,20 @@ class TrajectoryPrediction(BasicTask):
             raise NotImplementedError('Unknown decoder type:', self.decoder_type)
         return decoder
 
-    def get_loss(self):
+    def get_loss(self, loss):
         """
         Instantiate the loss module. Currenly adopt the MSE loss.
 
         :return: The loss module.
         """
-        loss = L1Loss(reduction='none')
+        if loss == 'MAE':
+            loss = L1Loss(reduction='none')
+            assert self.task_type == 'Regression'
+        elif loss == 'MSE':
+            loss = MSELoss(reduction='none')
+            assert self.task_type == 'Regression'
+        else:
+            raise NotImplementedError('Unknown loss type', loss)
         return loss
 
     @property

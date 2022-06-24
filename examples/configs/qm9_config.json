@@ -7,11 +7,11 @@
         "hidden_dim": 64,
         "model": "EGNN",
         "n_layers": 4,
-        "data_path": "cached_datasets",
+        "data_path": "cached_datasets/qm9",
         "model_save_path": "saved_models",
         "earlystopping": 10,
         "weight_decay": 1e-10,
-        "optimizer": "SGD",
+        "optimizer": "Adam",
         "scheduler": "Plateau",
         "eval_epoch": 1,
         "target": 0
