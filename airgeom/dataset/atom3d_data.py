@@ -289,7 +289,7 @@ class Atom3DDataset(InMemoryDataset):
     See http://www.quantum-machine.org/gdml/#datasets for details.
     """
 
-    multi_graph_tasks = ['LEP']
+    multi_graph_tasks = ['lep']
 
     def __init__(self, root, task, split, transform=None, pre_transform=None, dataset_arg=None, num_workers=1):
         
@@ -302,21 +302,34 @@ class Atom3DDataset(InMemoryDataset):
         super(Atom3DDataset, self).__init__(root, transform, pre_transform)
         path = osp.join(self.processed_dir, f'{split}.pt')
         self.data, self.slices = torch.load(path)
+        if self.task in Atom3DDataset.multi_graph_tasks:
+            self.data1, self.data2 = self.data
+            self.slices1, self.slices2 = self.slices
 
 
     def len(self):
-        # if self.task in Atom3DDataset.multi_graph_tasks:
-        #     slices = self.slices[0]
-        # else:
-        slices = self.slices
+        if self.task in Atom3DDataset.multi_graph_tasks:
+            slices = self.slices1
+        else:
+            slices = self.slices
         return len(slices[list(slices.keys())[0]]) - 1
 
     def get(self, idx):
-        data = super(Atom3DDataset, self).get(idx)
-        if self.transform:
-            return self.transform(data)
-        else:
-            return data
+        if self.task in Atom3DDataset.multi_graph_tasks:
+            self.data, self.slices = self.data1, self.slices1
+            data1 = super(Atom3DDataset, self).get(idx)
+            self.data, self.slices = self.data2, self.slices2
+            data2 = super(Atom3DDataset, self).get(idx)     
+            if self.transform:
+                return self.transform(data1), self.transform(data2)
+            else:
+                return data1, data2
+        else:                  
+            data = super(Atom3DDataset, self).get(idx)
+            if self.transform:
+                return self.transform(data)
+            else:
+                return data
 
     def get_pre_transform(self):
         name = self.task
@@ -448,31 +461,32 @@ class Atom3DDataset(InMemoryDataset):
     def process(self):
         data_dir = self.lmdb_file_dir
         save_dir = self.processed_dir
-        # if self.task in Atom3DDataset.multi_graph_tasks:
-        #     for split in ['train', 'val', 'test']:
-        #         print(f"Preprocessing {split} data for {self.task} task ...")
-        #         dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
-        #         samples1, samples2 = []
-        #         for i, item in enumerate(tqdm(dataset)):
-        #             item1, item2 = item
-        #             samples1.append(item1)
-        #             samples2.append(item2)
-        #         data1, slices1 = self.collate(samples1)
-        #         data2, slices2 = self.collate(samples1)
-        #         torch.save(((data1, data2), (slices1, slices2)), osp.join(save_dir, split)) 
-        # else:
-        for split in ['train', 'val', 'test']:
-            print(f"Preprocessing {split} data for {self.task} task ...")
-            dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
-            # samples = []
-            # for i, item in enumerate(tqdm(dataset)):
-            #     samples.append(item)
-            samples = get_preprocessed_list(dataset,self.num_workers)
-            data, slices = self.collate(samples)
-            torch.save((data, slices), osp.join(save_dir, f'{split}.pt')) 
+        if self.task in Atom3DDataset.multi_graph_tasks:
+            for split in ['train', 'val', 'test']:
+                print(f"Preprocessing {split} data for {self.task} task ...")
+                dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
+                samples1, samples2 = [], []
+                for i, item in enumerate(tqdm(dataset)):
+                    item1, item2 = item
+                    samples1.append(item1)
+                    samples2.append(item2)
+                data1, slices1 = self.collate(samples1)
+                data2, slices2 = self.collate(samples2)
+                torch.save(((data1, data2), (slices1, slices2)), osp.join(save_dir, f'{split}.pt')) 
+        else:
+            for split in ['train', 'val', 'test']:
+                print(f"Preprocessing {split} data for {self.task} task ...")
+                dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
+                samples = []
+                for i, item in enumerate(tqdm(dataset)):
+                    samples.append(item)
+                # samples = get_preprocessed_list(dataset,self.num_workers)
+                data, slices = self.collate(samples)
+                torch.save((data, slices), osp.join(save_dir, f'{split}.pt')) 
         print("Preprocess done!")
 
 
 if __name__ == '__main__':
-    download_dataset('lba', 'cached_datasets/atom3d', 'sequence-identity-30')
-    download_dataset('lep', 'cached_datasets/atom3d', 'protein')
+    # download_dataset('lba', 'cached_datasets/atom3d', 'sequence-identity-30')
+    # download_dataset('lep', 'cached_datasets/atom3d', 'protein')
+    dataset = Atom3DDataset('cached_datasets/atom3d', 'lep', 'train', dataset_arg='protein')
