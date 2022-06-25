@@ -11,13 +11,15 @@ class Prediction(BasicTask):
     :param output_dim: the output dimension for computing loss.
     :param rep_dim: the dimension of the representation.
     """
-    def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE'):
+    def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE', mean=None, std=None):
         super(Prediction, self).__init__(rep)
         self.rep_dim = rep_dim
         self.output_dim = output_dim
         self.task_type = task_type
         self.decoder = self.get_decoder()
         self.loss = self.get_loss(loss)
+        self.mean = mean
+        self.std = std
 
     def get_decoder(self):
         """
@@ -76,6 +78,10 @@ class Prediction(BasicTask):
             y = data.y.squeeze(-1)
         else:
             y = data.y
+        if self.std is not None:
+            output = output * self.std
+        if self.mean is not None:
+            output = output + self.mean
         loss = self.loss(output, y)
         return output, loss, y
 
