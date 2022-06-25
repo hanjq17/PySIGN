@@ -39,7 +39,7 @@ class Trainer(object):
         all_loss = []
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
-            _, loss = self.task(batch_data)
+            _, loss, y = self.task(batch_data)
             all_loss.append(loss.detach().cpu().numpy())
         return {'loss': self.stats.get_averaged_loss(all_loss)}
 

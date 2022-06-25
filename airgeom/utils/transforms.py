@@ -27,6 +27,7 @@ class ToFullyConnected(object):
         data.edge_index = edge_index
         return data
 
+
 class AtomOnehot(object):
 
     def __init__(self,max_atom_type=100, charge_power=2, atom_type_name='atom_type', atom_list=None):
@@ -43,7 +44,7 @@ class AtomOnehot(object):
         return res
 
     def __call__(self,data):
-        #atom_type = data.atom_type
+        # atom_type = data.atom_type
         assert hasattr(data,self.atom_type_name)
         atom_type = getattr(data, self.atom_type_name)
         if self.charge_power == -1:

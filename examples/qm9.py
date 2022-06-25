@@ -27,7 +27,6 @@ std = dataset.std()
 
 # Now generate random permutations to assign molecules to training/validation/test sets.
 Nmols = len(dataset)
-
 Ntrain = 100000
 Ntest = int(0.1*Nmols)
 Nvalid = Nmols - (Ntrain + Ntest)
@@ -39,14 +38,16 @@ data_perm = np.random.permutation(Nmols)
 # Now use the permutations to generate the indices of the dataset splits.
 # train, valid, test, extra = np.split(included_idxs[data_perm], [Ntrain, Ntrain+Nvalid, Ntrain+Nvalid+Ntest])
 train, valid, test, extra = np.split(
-    data_perm, [Ntrain, Ntrain+Nvalid, Ntrain+Nvalid+Ntest])
+    data_perm, [Ntrain, Ntrain + Nvalid, Ntrain + Nvalid + Ntest])
 
-test_dataset = dataset[test]
-val_dataset = dataset[valid]
 train_dataset = dataset[train]
-test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+val_dataset = dataset[valid]
+test_dataset = dataset[test]
+
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+
 dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

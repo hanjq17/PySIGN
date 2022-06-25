@@ -90,8 +90,10 @@ print('Data ready')
 # Split datasets
 train_dataset = dataset[args.vel_step: args.vel_step + 9500]
 val_dataset = dataset[args.vel_step + 9500: args.vel_step + 10000]
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
 dataloaders = {'train': train_loader, 'val': val_loader, 'test': None}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
