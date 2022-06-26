@@ -7,7 +7,7 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 3. Uniformed pipelines.
 4. Elaborated toolkits.
 
-![Design](assets/airgeom_fig.pdf "Design")
+![Design](assets/airgeom_fig.png "Design")
 
 ### Matched Enc-Dec for MD
 
