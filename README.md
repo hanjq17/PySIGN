@@ -7,6 +7,8 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 3. Uniformed pipelines.
 4. Elaborated toolkits.
 
+![Design](assets/airgeom_fig.pdf "Design")
+
 ### Matched Enc-Dec for MD
 
 |                | Scalar   | EquivariantVector | DifferentialVector |
@@ -21,10 +23,9 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 
 ### Trajectories on MD17
 
-![GT](visualization/vis/Aspirin_GT_1000.gif "GT")
-![EGNN](visualization/vis/Aspirin_EGNN_DifferentialVector_1000.gif "EGNN")
+![MD17](assets/md17_dynamics.gif "MD17")
 
 
 ### Trajectories on NBody
 
-![EGNN](visualization/vis/nbody.gif "EGNN")
+![NBody](assets/nbody.gif "NBody")
