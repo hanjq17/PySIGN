@@ -6,7 +6,7 @@ from torch.autograd import grad
 import torch.nn as nn
 
 
-class TrajectoryPrediction(BasicTask):
+class DynamicsPrediction(BasicTask):
     """
     The prediction task.
 
@@ -15,7 +15,7 @@ class TrajectoryPrediction(BasicTask):
     :param rep_dim: the dimension of the representation.
     """
     def __init__(self, rep, rep_dim, decoder_type='DifferentialVector', task_type='Regression', loss='MAE'):
-        super(TrajectoryPrediction, self).__init__(rep)
+        super(DynamicsPrediction, self).__init__(rep)
         self.rep_dim = rep_dim
         self.task_type = task_type
         assert decoder_type in ['Scalar', 'EquivariantScalar', 'DifferentialVector', 'EquivariantVector']

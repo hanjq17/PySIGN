@@ -5,7 +5,7 @@ from tqdm import tqdm
 import os
 import argparse
 
-__all__ = ['MD17', 'MD17_trajectory']
+__all__ = ['MD17', 'MD17_Dynamics']
 
 
 class MD17(InMemoryDataset):
@@ -96,18 +96,18 @@ class MD17(InMemoryDataset):
             torch.save((data, slices), self.processed_paths[0])
 
 
-class MD17_trajectory(MD17):
+class MD17_Dynamics(MD17):
     def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
-        super(MD17_trajectory, self).__init__(root, transform, pre_transform, dataset_arg)
+        super(MD17_Dynamics, self).__init__(root, transform, pre_transform, dataset_arg)
         self.vel_step = vel_step
         self.pred_step = pred_step
     
     def get(self, idx):
         prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
         next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
-        data, data_prev, data_next = super(MD17_trajectory, self).get(idx), \
-                                     super(MD17_trajectory, self).get(prev_idx), \
-                                     super(MD17_trajectory, self).get(next_idx)
+        data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), \
+                                     super(MD17_Dynamics, self).get(prev_idx), \
+                                     super(MD17_Dynamics, self).get(next_idx)
         data.v = (data.pos - data_prev.pos) / self.vel_step * self.pred_step
         data.pred = data_next.pos - data.pos
         if self.transform:

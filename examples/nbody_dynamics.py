@@ -5,7 +5,7 @@ from airgeom.dataset import NBody
 from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet, TFN, SE3Transformer
 from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
 from airgeom.trainer import Trainer
-from airgeom.task import TrajectoryPrediction
+from airgeom.task import DynamicsPrediction
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
 import torch
@@ -76,7 +76,7 @@ else:
 
 args.model_save_path = os.path.join(args.model_save_path, args.model)
 
-task = TrajectoryPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
+task = DynamicsPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False)
 
 trainer.loop()
