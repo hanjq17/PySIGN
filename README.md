@@ -27,6 +27,4 @@ AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
 
 ### Trajectories on NBody
 
-![EGNN](visualization/vis/animation_10.gif "EGNN")
-![EGNN](visualization/vis/animation_15.gif "EGNN")
-![EGNN](visualization/vis/animation_20.gif "EGNN")
+![EGNN](visualization/vis/nbody.gif "EGNN")
