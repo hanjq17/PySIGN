@@ -32,6 +32,8 @@ def para_comp(n_particle, box_size, T, sample_freq):
 
 class NBody(InMemoryDataset):
     raw_url = None
+    mode = 'one_step'  # or 'rollout'
+    rollout_step = None
 
     def __init__(self, root, transform=None, pre_transform=None, n_particle=5, num_samples=500,
                  box_size=None, T=5000, sample_freq=100, num_workers=20,
@@ -42,6 +44,7 @@ class NBody(InMemoryDataset):
         self.T, self.sample_freq = T, sample_freq
         self.num_workers = num_workers
         self.initial_step, self.pred_step = initial_step, pred_step
+        assert self.initial_step - self.pred_step >= 0  # since v_input is a differential of positions
         super(NBody, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
@@ -49,10 +52,26 @@ class NBody(InMemoryDataset):
         return len(self.slices[list(self.slices.keys())[0]]) - 1
 
     def get(self, idx):
-        data = super(NBody, self).get(idx)
-        data.pos = data.pos[self.initial_step]  # the input of x
-        data.pred = data.v[self.initial_step + self.pred_step]  # the label of v
-        data.v = data.v[self.initial_step]  # the input of v
+        if self.mode == 'one_step':
+            data = super(NBody, self).get(idx)
+            data.pred = data.pos[self.initial_step + self.pred_step] - data.pos[self.initial_step]  # the label of v
+            data.v = data.pos[self.initial_step] - data.pos[self.initial_step - self.pred_step]  # the input of v
+            data.pos = data.pos[self.initial_step]  # the input of x, [N, 3]
+            # data.v = data.v[self.initial_step]  # the input of v
+        elif self.mode == 'rollout':
+            data = super(NBody, self).get(idx)
+            t_idx = torch.arange(self.initial_step, data.pos.shape[0] - self.pred_step, self.pred_step)
+            assert len(t_idx) >= self.rollout_step
+            t_idx = t_idx[:self.rollout_step]
+            data.pred = data.pos[t_idx + self.pred_step] - data.pos[t_idx]
+            data.pred = data.pred.transpose(0, 1)
+            data.v = data.pos[t_idx] - data.pos[t_idx - self.pred_step]
+            data.v = data.v.transpose(0, 1)  # [N, T, 3]
+            data.pos = data.pos[t_idx]
+            data.pos = data.pos.transpose(0, 1)
+        else:
+            raise RuntimeError('Unknown mode for NBody dynamics', self.mode)
+
         return data
 
     @property

@@ -4,12 +4,14 @@ sys.path.append('./')
 from airgeom.dataset import NBody
 from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet, TFN, SE3Transformer
 from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
-from airgeom.trainer import Trainer
+from airgeom.trainer import DynamicsTrainer
 from airgeom.task import DynamicsPrediction
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
 import torch
 import os
+import numpy as np
+import pickle
 
 torch.cuda.set_device(0)
 
@@ -23,7 +25,7 @@ class NBody_transform(object):
     def __call__(self, data):
         data.edge_attr = data.charge[data.edge_index[0]] * data.charge[data.edge_index[1]]
         data.x = torch.norm(data.v, dim=-1, keepdim=True)
-        data['z'] = data.charge
+        data['z'] = data.charge  # for TFN and SE3-Tr.
         return data
 
 
@@ -31,20 +33,19 @@ os.makedirs(args.data_path, exist_ok=True)
 dataset = NBody(root=args.data_path, transform=T.Compose([ToFullyConnected(), NBody_transform()]),
                 n_particle=args.n_particle, num_samples=args.num_samples, T=args.T, sample_freq=args.sample_freq,
                 num_workers=20, initial_step=args.initial_step, pred_step=args.pred_step)
+# Change the mode of dataset from one-step to roll-out for rollout evaluation
+dataset.mode = 'rollout'
+dataset.rollout_step = 30
+
 print('Data ready')
 
 # Split datasets
-train_dataset = dataset[:800]
-val_dataset = dataset[800: 900]
 test_dataset = dataset[900: 1000]
 
-train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
+dataloaders = {'train': None, 'val': None, 'test': test_loader}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 
 if args.model == 'EGNN':
     rep_model = EGNN(in_node_nf=1, hidden_nf=args.hidden_dim,
@@ -77,7 +78,18 @@ else:
 args.model_save_path = os.path.join(args.model_save_path, args.model)
 
 task = DynamicsPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
-trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=True)
+trainer = DynamicsTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False,
+                          save_pred=args.save_pred)
+trainer.model_saver.load(epoch='best')
 
-trainer.loop()
+all_loss, all_pred = trainer.evaluate_rollout_multi_system(valid=False)
+
+temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
+print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
+
+out_dir = os.path.join(args.eval_result_path, args.model)
+os.makedirs(out_dir, exist_ok=True)
+with open(os.path.join(out_dir, 'eval_result.pkl'), 'wb') as f:
+    pickle.dump((all_loss, all_pred), f)
+print('Saved to', os.path.join(out_dir, 'eval_result.pkl'))
 
