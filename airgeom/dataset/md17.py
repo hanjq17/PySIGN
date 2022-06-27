@@ -1,14 +1,12 @@
 import torch
 from torch_geometric.data import InMemoryDataset, download_url, Data
 import numpy as np
-from torch.utils.data import Subset
-from torch_geometric.data import DataLoader
 from tqdm import tqdm
-import pickle as pkl
 import os
 import argparse
 
-__all__ = ['MD17', 'MD17_trajectory']
+__all__ = ['MD17', 'MD17_Dynamics']
+
 
 class MD17(InMemoryDataset):
     """Machine learning of accurate energy-conserving molecular force fields (Chmiela et al. 2017)
@@ -84,7 +82,6 @@ class MD17(InMemoryDataset):
         for file_name in self.raw_file_names:
             download_url(MD17.raw_url + file_name, self.raw_dir)
 
-
     def process(self):
         for path in self.raw_paths:
             data_npz = np.load(path)
@@ -106,98 +103,32 @@ class MD17(InMemoryDataset):
             data, slices = self.collate(samples)
             torch.save((data, slices), self.processed_paths[0])
 
-class MD17_trajectory(MD17):
+
+class MD17_Dynamics(MD17):
     def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
-        super(MD17_trajectory, self).__init__(root, transform, pre_transform, dataset_arg)
+        super(MD17_Dynamics, self).__init__(root, transform, pre_transform, dataset_arg)
         self.vel_step = vel_step
         self.pred_step = pred_step
     
-    def get(self,idx):
+    def get(self, idx):
         prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
         next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
-        data, data_prev, data_next = super(MD17_trajectory, self).get(idx), super(MD17_trajectory, self).get(prev_idx), super(MD17_trajectory, self).get(next_idx)
+        data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), \
+                                     super(MD17_Dynamics, self).get(prev_idx), \
+                                     super(MD17_Dynamics, self).get(next_idx)
         data.v = (data.pos - data_prev.pos) / self.vel_step * self.pred_step
         data.pred = data_next.pos - data.pos
         if self.transform:
             return self.transform(data)
         else:
-            return data      
+            return data
 
-    def download(self):
-        for file_name in self.raw_file_names:
-            download_url(MD17.raw_url + file_name, self.raw_dir)
-
-
-    def process(self):
-        for path in self.raw_paths:
-            data_npz = np.load(path)
-            z = torch.from_numpy(data_npz["z"]).long()
-            positions = torch.from_numpy(data_npz["R"]).float()
-            energies = torch.from_numpy(data_npz["E"]).float()
-            forces = torch.from_numpy(data_npz["F"]).float()
-
-            samples = []
-            for pos, y, dy in zip(positions, energies, forces):
-                samples.append(Data(z=z, pos=pos, y=y.unsqueeze(1), dy=dy))
-
-            if self.pre_filter is not None:
-                samples = [data for data in samples if self.pre_filter(data)]
-
-            if self.pre_transform is not None:
-                samples = [self.pre_transform(data) for data in tqdm(samples)]
-
-            data, slices = self.collate(samples)
-            torch.save((data, slices), self.processed_paths[0]) 
-        
-
-
-def get_dataloaders(dataset, num_train, num_val, batch_size, test_batch_size, num_workers, idx_dir, shuffle = True):
-    idx_file = os.path.join(idx_dir,'idx.pkl')
-    if os.path.exists(idx_file):
-        with open(idx_file,'rb') as f:
-            idx = pkl.load(f)
-    else:
-        size = len(dataset)
-        idx = np.arange(size)
-        np.random.shuffle(idx)
-        with open(idx_file,'wb') as f:
-            pkl.dump(idx, f)
-    idx = torch.from_numpy(idx)
-    train_idx = idx[:num_train]
-    val_idx = idx[num_train:num_train + num_val]
-    test_idx = idx[num_train + num_val:]
-    train_set = dataset[train_idx]
-    val_set = dataset[val_idx]
-    test_set = dataset[test_idx]
-    train_loader = DataLoader(
-            dataset=train_set,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=num_workers
-        )
-    val_loader = DataLoader(
-            dataset=val_set,
-            batch_size=batch_size,
-            shuffle=False,
-            num_workers=num_workers
-        )
-    test_loader = DataLoader(
-            dataset=test_set,
-            batch_size=test_batch_size,
-            shuffle=False,
-            num_workers=num_workers
-        )
-    return {
-        'train':train_loader,
-        'val':val_loader,
-        'test':test_loader,
-        'idx':idx
-    }
 
 def get_mean_std(dataloaders):
     val_loader = dataloaders['val']
     ys = torch.cat([batch.y.squeeze() for batch in val_loader])
     return ys.mean(), ys.std()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MD17 preprocess')

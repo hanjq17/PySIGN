@@ -2,25 +2,24 @@ import sys
 sys.path.append('./')
 from airgeom.dataset import Atom3DDataset
 from airgeom.nn.model import EGNN, PaiNN, EquivariantTransformer, RadialField, SchNet, DimeNet
-from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
+from airgeom.utils import get_default_args, load_params, set_seed
 from airgeom.trainer import PredictionTrainer
 from airgeom.task import Prediction
-import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
 import torch
 
 torch.cuda.set_device(0)
 
-param_path = 'examples/configs/atom3d_lba.json'
+param_path = 'examples/configs/atom3d_lba_config.json'
 args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)
 
 
-
 class SelectEdges(object):
     def __init__(self, edges_between=True):
         self.edges_between = edges_between
+
     def __call__(self, data):
         data.edge_attr = data.edge_attr.reshape(-1,1)
         if not self.edges_between:
@@ -33,16 +32,17 @@ class SelectEdges(object):
 
 
 transform = SelectEdges()
-train_dataset = Atom3DDataset(root=args.data_path, task='lba',split='train',dataset_arg='sequence-identity-30',transform=transform)
-val_dataset = Atom3DDataset(root=args.data_path, task='lba',split='val',dataset_arg='sequence-identity-30',transform=transform)
-test_dataset = Atom3DDataset(root=args.data_path, task='lba',split='test',dataset_arg='sequence-identity-30',transform=transform)
+train_dataset = Atom3DDataset(root=args.data_path, task='lba', split='train', dataset_arg='sequence-identity-30', transform=transform)
+val_dataset = Atom3DDataset(root=args.data_path, task='lba', split='val', dataset_arg='sequence-identity-30', transform=transform)
+test_dataset = Atom3DDataset(root=args.data_path, task='lba', split='test', dataset_arg='sequence-identity-30', transform=transform)
+
 print('Data ready')
-# Normalize targets to mean = 0 and std = 1.
 
 # Split datasets.
-test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+
 dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
