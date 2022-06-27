@@ -51,7 +51,6 @@ class MD17(InMemoryDataset):
         path = self.processed_paths[0]
         self.data, self.slices = torch.load(path)
 
-
     def len(self):
         return len(self.slices[list(self.slices.keys())[0]]) - 1
 
@@ -103,6 +102,27 @@ class MD17(InMemoryDataset):
             data, slices = self.collate(samples)
             torch.save((data, slices), self.processed_paths[0])
 
+    def get_split_by_num(self, n_train, n_val, n_test):
+        n_tot = len(self)
+        import numpy as np
+        # Generate random permutation
+        np.random.seed(0)
+        data_perm = np.random.permutation(n_tot)
+
+        # Now use the permutations to generate the indices of the dataset splits.
+        train, valid, test, extra = np.split(
+            data_perm, [n_train, n_train + n_val, n_train + n_val + n_test])
+        train_dataset, val_dataset, test_dataset = self[train], self[valid], self[test]
+        return {'train': train_dataset,
+                'val': val_dataset,
+                'test': test_dataset}
+
+    def default_split(self):
+        n_train = 950
+        n_val = 50
+        n_test = len(self) - n_train - n_val
+        return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)
+
 
 class MD17_Dynamics(MD17):
     def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
@@ -122,6 +142,12 @@ class MD17_Dynamics(MD17):
             return self.transform(data)
         else:
             return data
+
+    def default_split(self):
+        n_train = 9500
+        n_val = 500
+        n_test = 10000
+        return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)
 
 
 def get_mean_std(dataloaders):

@@ -64,3 +64,26 @@ class QM9(QM9_pyg):
     def process(self):
         super(QM9, self).process()
 
+    def get_split_by_num(self, n_train, n_val, n_test):
+        n_tot = len(self)
+        import numpy as np
+        # Generate random permutation
+        np.random.seed(0)
+        data_perm = np.random.permutation(n_tot)
+
+        # Now use the permutations to generate the indices of the dataset splits.
+        train, valid, test, extra = np.split(
+            data_perm, [n_train, n_train + n_val, n_train + n_val + n_test])
+        train_dataset, val_dataset, test_dataset = self[train], self[valid], self[test]
+        return {'train': train_dataset,
+                'val': val_dataset,
+                'test': test_dataset}
+
+    def default_split(self):
+        n_tot = len(self)
+        n_test = int(0.1 * n_tot)
+        n_train = 100000
+        n_val = n_tot - n_train - n_test
+        return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)
+
+

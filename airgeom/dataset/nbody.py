@@ -107,6 +107,17 @@ class NBody(InMemoryDataset):
         data, slices = self.collate(samples)
         torch.save((data, slices), self.processed_paths[0])
 
+    def get_split_by_num(self, n_train, n_val, n_test):
+        train_dataset = self[:n_train]
+        val_dataset = self[n_train: n_train + n_val]
+        test_dataset = self[n_train + n_val: n_train + n_val + n_test]
+        return {'train': train_dataset,
+                'val': val_dataset,
+                'test': test_dataset}
+
+    def default_split(self):
+        return self.get_split_by_num(n_train=800, n_val=100, n_test=100)
+
 
 if __name__ == '__main__':
     dataset = NBody(root='/data/new/cached_datasets/nbody', transform=None)
