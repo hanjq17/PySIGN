@@ -62,13 +62,13 @@ class GatedEquivariantBlock(nn.Module):
 
 
 class Scalar(nn.Module):
-    def __init__(self, hidden_channels, activation="silu"):
+    def __init__(self, hidden_channels, activation="silu", output_dim=1):
         super(Scalar, self).__init__()
         act_class = act_class_mapping[activation]
         self.output_network = nn.Sequential(
             nn.Linear(hidden_channels, hidden_channels // 2),
             act_class(),
-            nn.Linear(hidden_channels // 2, 2),  # [energy, dt]
+            nn.Linear(hidden_channels // 2, output_dim),  # [energy, dt]
         )
 
         self.reset_parameters()
@@ -138,9 +138,10 @@ class EquivariantVector(nn.Module):
         x,v = data.h, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
-        dt, dv = x, v.squeeze(-1)
+        # dt, dv = x, v.squeeze(-1)
         # return v.squeeze(-1)
-        return data.v * dt + dv
+        # return data.v * dt + dv
+        return x, v.squeeze(-1)
 
 
 class DifferentialVector(nn.Module):

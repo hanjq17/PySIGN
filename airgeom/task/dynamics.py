@@ -30,7 +30,7 @@ class TrajectoryPrediction(BasicTask):
         :return: The decoder module.
         """
         if self.decoder_type == 'Scalar':
-            decoder = Scalar(self.rep_dim)
+            decoder = Scalar(self.rep_dim, output_dim = 2)
         elif self.decoder_type == 'EquivariantScalar':
             decoder = EquivariantScalar(self.rep_dim)
         elif self.decoder_type == 'EquivariantVector':
@@ -90,6 +90,9 @@ class TrajectoryPrediction(BasicTask):
                 retain_graph=True,
             )[0]
             output = dy + dt * data.v
+        if self.decoder_type == 'EquivariantVector':
+            dt, dv = output
+            output = rep.v * dt + dv
         loss = self.loss(output, data.pred).sum(dim=-1)
         return output, loss, data.pred
 

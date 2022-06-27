@@ -64,6 +64,14 @@ class MD17(InMemoryDataset):
         else:
             return data
 
+    def mean(self):
+        y = self.data.y
+        return float(y.mean())
+
+    def std(self):
+        y = self.data.y
+        return float(y.std())    
+
     @property
     def raw_file_names(self):
         return [MD17.molecule_files[mol] for mol in self.molecules]
