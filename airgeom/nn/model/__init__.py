@@ -1,9 +1,9 @@
 from .scalar import *
 from .painn import *
 from .et import *
-from .Scalar.schnet import SchNet
-from .Scalar.dimenet import DimeNet
-from .Irreps.irreps import TFN, SE3Transformer
+from .scalar.schnet import SchNet
+from .scalar.dimenet import DimeNet
+from .irreps.irreps import TFN, SE3Transformer
 
 
 def get_model_from_args(node_dim, edge_attr_dim, args, dynamics=False):
