@@ -1,6 +1,6 @@
 import argparse
 import json
-
+import yaml
 
 def get_default_args():
     parser = argparse.ArgumentParser(description='DefaultArgs')
@@ -22,8 +22,18 @@ def get_default_args():
 
 
 def load_params(args, param_path):
+    """
+    load the arguments from json/yml file.
+    """
+    if param_path.endswith(".yml") or param_path.endswith(".yaml"):
+        load_func = yaml.safe_load
+    elif param_path.endswith(".json"):
+        load_func = json.load
+    else:
+        raise NotImplementedError(f"Unsupported parameter file: {param_path}.")
+
     with open(param_path, 'r') as f:
-        params = json.load(f)
+        params = load_func(f)
     for k in params:
         setattr(args, k, params[k])
     return args
