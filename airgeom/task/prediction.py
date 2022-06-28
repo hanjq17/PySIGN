@@ -1,9 +1,10 @@
-from torch.nn import Linear, MSELoss, Module, L1Loss, NLLLoss, BCELoss, CrossEntropyLoss
+from torch.nn import Linear, MSELoss, L1Loss, BCELoss, CrossEntropyLoss
 from torch_geometric.nn import global_mean_pool, global_add_pool
 from .basic import BasicTask
 from .utils.output_modules import *
 from torch.autograd import grad
 import torch
+
 
 class Prediction(BasicTask):
     """
@@ -34,7 +35,7 @@ class Prediction(BasicTask):
 
     def get_loss(self, loss):
         """
-        Instantiate the loss module. Currenly adopt the MSE loss.
+        Instantiate the loss module. Currently adopt the MSE loss.
 
         :return: The loss module.
         """
@@ -86,6 +87,7 @@ class Prediction(BasicTask):
             output = output + self.mean
         loss = self.loss(output, y)
         return output, loss, y
+
 
 class EnergyForcePrediction(BasicTask):
     """
@@ -200,8 +202,8 @@ class EnergyForcePrediction(BasicTask):
         loss_force = global_mean_pool(loss_force, data.batch)
         loss = self.energy_weight * loss_energy + self.force_weight * loss_force
         return loss, {
-            'loss_energy' : loss_energy,
-            'loss_force' : loss_force
+            'loss_energy': loss_energy,
+            'loss_force': loss_force
         }
 
 

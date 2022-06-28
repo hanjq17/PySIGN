@@ -1,8 +1,5 @@
 from .basic import Trainer
-import torch
-import numpy as np
-import scipy.stats
-from sklearn.metrics import roc_auc_score, average_precision_score
+
 
 class MultiTaskTrainer(Trainer):
 
@@ -22,7 +19,7 @@ class MultiTaskTrainer(Trainer):
             if self.verbose:
                 if step % 40 == 0:
                     format_str = ''
-                    for k,v in outputs.items():
+                    for k, v in outputs.items():
                         if k.startswith('loss_'):
                             format_str += f' | {k[5:]}: {v.mean().item()}'
                     print('Step: {:4d} | Train Loss: {:.6f}'.format(step, loss.item()) + format_str)
@@ -40,6 +37,6 @@ class MultiTaskTrainer(Trainer):
                         all_loss[k[5:]].append(v.detach().cpu().numpy())
                     else:
                         all_loss[k[5:]] = [v.detach().cpu().numpy()]
-        all_loss = {k:self.stats.get_averaged_loss(v) for k,v in all_loss.items()}
+        all_loss = {k:self.stats.get_averaged_loss(v) for k, v in all_loss.items()}
         return all_loss
 
