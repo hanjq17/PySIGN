@@ -75,7 +75,7 @@ class DynamicsPrediction(BasicTask):
         :return: The loss computed.
         """
         if self.decoder_type in ['Scalar', 'EquivariantScalar']:
-            data.pos.requires_grad_(True)
+            data.x.requires_grad_(True)
         rep = self.rep(data)
         output = self.decoder(rep)  # node-wise rep
         if self.decoder_type in ['Scalar', 'EquivariantScalar']:

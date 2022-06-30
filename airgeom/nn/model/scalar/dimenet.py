@@ -11,7 +11,7 @@ from torch_sparse import SparseTensor
 from torch_scatter import scatter
 from torch_geometric.nn import MessagePassing, radius_graph
 
-from airgeom.nn.model.Scalar.schnet import InteractionBlock
+from airgeom.nn.model.scalar.schnet import InteractionBlock
 
 
 def swish(x):
@@ -104,6 +104,7 @@ class DimeNet(nn.Module):
         h, pos, batch = data.h, data.x, data.batch
         edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
                                   max_num_neighbors=self.max_num_neighbors)
+        # edge_index = data.edge_index
         i, j, idx_i, idx_j, idx_k, idx_kj, idx_ji = self.triplets(
             edge_index, num_nodes=h.size(0))
         dist = (pos[i] - pos[j]).norm(dim=-1)  # calculate distances
@@ -125,7 +126,7 @@ class DimeNet(nn.Module):
         # interaction block
         for interaction_block, output_block in zip(self.interaction_blocks, self.output_blocks[1:]):
             h = interaction_block(h, rbf, sbf, idx_kj, idx_ji)
-            P += output_block(h, rbf, i)
+            P = P + output_block(h, rbf, i, num_nodes=data.num_nodes)
 
         data.x_pred, data.h_pred = pos, P
         return data

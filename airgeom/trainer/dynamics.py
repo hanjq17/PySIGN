@@ -77,7 +77,7 @@ class DynamicsTrainer(Trainer):
                     x_true = x_true + batch_data.v_label
 
                 cur_pred.append(batch_data.x)
-                # print(batch_data.pos.shape, batch_data.v.shape, batch_data.pred.shape, batch_data.x.shape)
+                
                 # TODO: revise here, not a good implementation
                 batch_data.h = torch.norm(batch_data.v, dim=-1, keepdim=True)
                 v_pred, loss, v_label = self.task(batch_data)
