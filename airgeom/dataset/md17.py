@@ -91,7 +91,7 @@ class MD17(InMemoryDataset):
 
             samples = []
             for pos, y, dy in zip(positions, energies, forces):
-                samples.append(Data(z=z, pos=pos, y=y.unsqueeze(1), dy=dy))
+                samples.append(Data(charge=z, x=pos, y=y.unsqueeze(1), dy=dy))
 
             if self.pre_filter is not None:
                 samples = [data for data in samples if self.pre_filter(data)]
@@ -136,8 +136,8 @@ class MD17_Dynamics(MD17):
         data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), \
                                      super(MD17_Dynamics, self).get(prev_idx), \
                                      super(MD17_Dynamics, self).get(next_idx)
-        data.v = (data.pos - data_prev.pos) / self.vel_step * self.pred_step
-        data.pred = data_next.pos - data.pos
+        data.v = (data.x - data_prev.x) / self.vel_step * self.pred_step
+        data.v_label = data_next.x - data.x
         if self.transform:
             return self.transform(data)
         else:
@@ -162,7 +162,7 @@ if __name__ == '__main__':
                         help='Path of download.')
     args = parser.parse_args()
 
-    molecules = ['aspirin','benzene','ethanol','malonaldehyde','naphthalene','salicylic_acid','toluene','uracil']
+    molecules = ['aspirin', 'benzene', 'ethanol', 'malonaldehyde', 'naphthalene', 'salicylic_acid', 'toluene', 'uracil']
 
 
     for mol in molecules:

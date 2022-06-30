@@ -55,6 +55,8 @@ class Trainer(object):
                 if self.scheduler is not None:
                     self.scheduler.step(metrics=val_loss)
                 better = self.early_stopping(val_loss)
+                if better == 'exit':
+                    return
                 if better:
                     self.model_saver(ep, val_loss)
                 if self.test:

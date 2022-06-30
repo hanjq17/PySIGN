@@ -4,6 +4,7 @@ import dgl
 from torch import nn
 from .se3_dynamics.models import SE3Transformer_dgl, TFN_dgl
 
+
 class TFN(nn.Module):
     def __init__(self, nf=16, n_layers=3, act_fn=nn.ReLU(), num_degrees=4, div=1):
         super().__init__()
@@ -18,14 +19,14 @@ class TFN(nn.Module):
         N, D = self.shape
         B = data.num_graphs
 
-        xs = data.pos.reshape(B,N,D)
+        xs = data.x.reshape(B,N,D)
         vs = data.v.reshape(B,N,D)
-        charges = data.z.unsqueeze(1).float()
+        charges = data.charge.unsqueeze(1).float()
 
         distance = xs[:, self.indices_dst] - xs[:, self.indices_src]
 
 
-        graph = dgl.batch([self.individual_graph] * B).to(data.pos.device)
+        graph = dgl.batch([self.individual_graph] * B).to(data.x.device)
 
         graph.ndata['vel'] = vs.view(xs.size(0) * vs.size(1), 3).unsqueeze(1)
 
@@ -45,9 +46,10 @@ class TFN(nn.Module):
 
         # out = xs # TODO transform.
 
-        data.x = (out + xs).reshape(-1,D)
+        data.x_pred = (out + xs).reshape(-1, D)
 
         return data
+
 
 class SE3Transformer(nn.Module):
     def __init__(self, nf=16, n_layers=3, act_fn=nn.ReLU(), num_degrees=4, div=1):
@@ -63,14 +65,14 @@ class SE3Transformer(nn.Module):
         N, D = self.shape
         B = data.num_graphs
 
-        xs = data.pos.reshape(B,N,D)
+        xs = data.x.reshape(B,N,D)
         vs = data.v.reshape(B,N,D)
-        charges = data.z.unsqueeze(1).float()
+        charges = data.charge.unsqueeze(1).float()
 
         distance = xs[:, self.indices_dst] - xs[:, self.indices_src]
 
 
-        graph = dgl.batch([self.individual_graph] * B).to(data.pos.device)
+        graph = dgl.batch([self.individual_graph] * B).to(data.x.device)
 
         graph.ndata['vel'] = vs.view(xs.size(0) * vs.size(1), 3).unsqueeze(1)
 
@@ -90,14 +92,15 @@ class SE3Transformer(nn.Module):
 
         # out = xs # TODO transform.
 
-        data.x = (out + xs).reshape(-1,D)
+        data.x_pred = (out + xs).reshape(-1, D)
 
         return data
+
 
 def pyg2dgl(data):
     B = data.num_graphs
     N = data.num_nodes // data.num_graphs
-    D = data.pos.shape[-1]
+    D = data.x.shape[-1]
 
     # get neighbour indices here and use throughout entire network; this is a numpy function
     indices_src, indices_dst, _w = connect_fully(N) # [N, K]
@@ -119,6 +122,7 @@ def pyg2dgl(data):
     # batched_graph = dgl.batch(individual_graphs)
 
     return G, (N,D), (indices_src, indices_dst)
+
 
 def connect_fully(num_atoms):
     """Convert to a fully connected graph"""

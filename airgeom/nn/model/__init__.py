@@ -1,8 +1,6 @@
 from .scalar import *
 from .painn import *
 from .et import *
-from .scalar.schnet import SchNet
-from .scalar.dimenet import DimeNet
 from .irreps.irreps import TFN, SE3Transformer
 
 

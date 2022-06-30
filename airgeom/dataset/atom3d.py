@@ -11,6 +11,7 @@ import scipy.spatial as ss
 import os.path as osp
 import copy
 from joblib import Parallel, delayed
+from airgeom.data import from_pyg
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
@@ -99,7 +100,9 @@ class GNNTransformLEP(object):
     def __call__(self, item):
         # transform protein and/or pocket to PTG graphs
         item = prot_graph_transform(item, atom_keys=self.atom_keys, label_key=self.label_key)
-        return item[self.atom_keys[0]], item[self.atom_keys[1]]
+        attrs = ['x', 'edge_index', 'edge_attr', 'y', 'pos']
+        transform = from_pyg(attrs)
+        return transform(item[self.atom_keys[0]]), transform(item[self.atom_keys[1]])
 
 
 class CollaterLEP(object):
@@ -129,6 +132,8 @@ class GNNTransformLBA(object):
         node_feats, edges, edge_feats, node_pos, node_mask = combine_graphs(item['atoms_pocket'], item['atoms_ligand'])
         combined_graph = Data(node_feats, edges, edge_feats, y=item['scores']['neglog_aff'], pos=node_pos,
                               instance=node_mask)
+        attrs = ['x', 'edge_index', 'edge_attr', 'y', 'pos', 'instance']
+        combined_graph = from_pyg(attrs)(combined_graph)
         return combined_graph
 
 
@@ -305,6 +310,8 @@ class Atom3DDataset(InMemoryDataset):
             pre_transform = GNNTransformLEP()
         elif name == "lba":
             pre_transform = GNNTransformLBA()
+        else:
+            raise NotImplementedError('Unknown task', name)
         return pre_transform
 
     @property

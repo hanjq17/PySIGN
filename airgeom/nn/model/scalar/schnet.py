@@ -60,7 +60,7 @@ class SchNet(nn.Module):
         return self.parameters()
     
     def forward(self, data):
-        h, pos, batch = data.x, data.pos, data.batch
+        h, pos, batch = data.h, data.x, data.batch
         h = self.embedding_in(h)
         edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
                                   max_num_neighbors=self.max_num_neighbors)
@@ -73,7 +73,7 @@ class SchNet(nn.Module):
 
         h = self.mlp(h)
 
-        data.x, data.h = pos, h
+        data.x_pred, data.h_pred = pos, h
         return data
 
 

@@ -84,7 +84,7 @@ class DynamicsPrediction(BasicTask):
             grad_outputs = [torch.ones_like(output)]
             dy = - grad(
                 [output],
-                [data.pos],
+                [data.x],
                 grad_outputs=grad_outputs,
                 create_graph=True,
                 retain_graph=True,
@@ -93,8 +93,8 @@ class DynamicsPrediction(BasicTask):
         if self.decoder_type == 'EquivariantVector':
             dt, dv = output
             output = rep.v * dt + dv
-        loss = self.loss(output, data.pred).sum(dim=-1)
-        return output, loss, data.pred
+        loss = self.loss(output, data.v_label).sum(dim=-1)
+        return output, loss, data.v_label
 
 
 

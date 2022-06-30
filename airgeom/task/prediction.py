@@ -73,7 +73,7 @@ class Prediction(BasicTask):
         :return: The loss computed.
         """
         rep = self.rep(data)
-        output = self.decoder(rep.h)  # node-wise rep
+        output = self.decoder(rep.h_pred)  # node-wise rep
         output = global_mean_pool(output, data.batch)
         if len(output.shape) == 2:
             output = output.squeeze(-1)
@@ -162,7 +162,7 @@ class EnergyForcePrediction(BasicTask):
         :return: The loss computed.
         """
         if self.decoder_type in ['Scalar']:
-            data.pos.requires_grad_(True)
+            data.x.requires_grad_(True)
         rep = self.rep(data)
         output = self.decoder(rep)  # node-wise rep
         if self.decoder_type == 'DifferentialVector':
@@ -181,7 +181,7 @@ class EnergyForcePrediction(BasicTask):
             grad_outputs = [torch.ones_like(energy)]
             force = - grad(
                 [energy],
-                [data.pos],
+                [data.x],
                 grad_outputs=grad_outputs,
                 create_graph=True,
                 retain_graph=True,

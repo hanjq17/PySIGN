@@ -147,9 +147,9 @@ class EquivariantTransformer(nn.Module):
         return self.parameters()
 
     def forward(self, data):
-        z = data.x
+        z = data.h
         x = self.embedding(z)
-        pos = data.pos
+        pos = data.x
         edge_index = data.edge_index
         edge_index = edge_index[:, edge_index[0] != edge_index[1]]
         edge_vec = pos[edge_index[0]] - pos[edge_index[1]]
@@ -164,7 +164,7 @@ class EquivariantTransformer(nn.Module):
             x = self.neighbor_embedding(z, x, edge_index, edge_weight, edge_attr)
 
         # TODO: need discussions here
-        if hasattr(data,'v'):
+        if hasattr(data, 'v'):
             vec = data.v.unsqueeze(-1).repeat(1,1,x.size(1))
         else:
             vec = torch.zeros(x.size(0), 3, x.size(1), device=x.device)
@@ -175,8 +175,8 @@ class EquivariantTransformer(nn.Module):
             vec = vec + dvec
         x = self.out_norm(x)
 
-        data.h = x
-        data.x = pos
+        data.h_pred = x
+        data.x_pred = pos
         data.vec = vec
 
         return data

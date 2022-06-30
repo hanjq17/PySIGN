@@ -80,7 +80,7 @@ class Scalar(nn.Module):
         self.output_network[2].bias.data.fill_(0)
 
     def forward(self, data):
-        h = data.h
+        h = data.h_pred
         return self.output_network(h)
 
 
@@ -106,7 +106,7 @@ class EquivariantScalar(nn.Module):
             layer.reset_parameters()
 
     def forward(self, data):
-        x,v = data.h, data.vec
+        x, v = data.h_pred, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
         # include v in output to make sure all parameters have a gradient
@@ -135,7 +135,7 @@ class EquivariantVector(nn.Module):
             layer.reset_parameters()
 
     def forward(self, data):
-        x,v = data.h, data.vec
+        x, v = data.h_pred, data.vec
         for layer in self.output_network:
             x, v = layer(x, v)
         # dt, dv = x, v.squeeze(-1)
@@ -149,5 +149,5 @@ class DifferentialVector(nn.Module):
         super(DifferentialVector,self).__init__()
 
     def forward(self, data):
-        return data.x - data.pos
+        return data.x_pred - data.x
 

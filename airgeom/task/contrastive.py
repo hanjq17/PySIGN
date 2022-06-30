@@ -40,7 +40,7 @@ class Contrastive(Prediction):
         """
         data1, data2 = data
         rep1, rep2 = self.rep(data1), self.rep(data2)
-        rep1, rep2 = global_mean_pool(rep1.h, data1.batch), global_mean_pool(rep2.h, data2.batch)
+        rep1, rep2 = global_mean_pool(rep1.h_pred, data1.batch), global_mean_pool(rep2.h_pred, data2.batch)
         rep = torch.cat((rep1, rep2), dim=-1)
         pred = self.decoder(rep)
         pred = pred.squeeze(-1)

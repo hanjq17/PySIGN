@@ -119,6 +119,6 @@ class EarlyStopping(object):
                 print('Early Stopping counter:', self.counter)
             if self.counter > self.max_times:
                 print('Early Stopping with patience', self.max_times, 'epochs, exit!')
-                exit(0)
+                return 'exit'
         return better
 

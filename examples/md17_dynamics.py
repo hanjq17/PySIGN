@@ -19,7 +19,7 @@ args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)
 
-transform = MD17_Transform(max_atom_type=args.max_atom_type, charge_power=args.charge_power, atom_type_name='z',
+transform = MD17_Transform(max_atom_type=args.max_atom_type, charge_power=args.charge_power, atom_type_name='charge',
                            cutoff=1.6, max_hop=args.max_hop)
 base_path = os.path.join(args.data_path, args.molecule)
 os.makedirs(base_path, exist_ok=True)
@@ -31,6 +31,7 @@ print('Data ready')
 datasets = dataset.default_split()
 dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size, shuffle=True if split == 'train' else False)
                for split in datasets}
+dataloaders['test'].batch_size = 1  # Single trajectory does not support batch size > 1 now.
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

@@ -54,21 +54,20 @@ class NBody(InMemoryDataset):
     def get(self, idx):
         if self.mode == 'one_step':
             data = super(NBody, self).get(idx)
-            data.pred = data.pos[self.initial_step + self.pred_step] - data.pos[self.initial_step]  # the label of v
-            data.v = data.pos[self.initial_step] - data.pos[self.initial_step - self.pred_step]  # the input of v
-            data.pos = data.pos[self.initial_step]  # the input of x, [N, 3]
-            # data.v = data.v[self.initial_step]  # the input of v
+            data.v_label = data.x[self.initial_step + self.pred_step] - data.x[self.initial_step]  # the label of v
+            data.v = data.x[self.initial_step] - data.x[self.initial_step - self.pred_step]  # the input of v
+            data.x = data.x[self.initial_step]  # the input of x, [N, 3]
         elif self.mode == 'rollout':
             data = super(NBody, self).get(idx)
-            t_idx = torch.arange(self.initial_step, data.pos.shape[0] - self.pred_step, self.pred_step)
+            t_idx = torch.arange(self.initial_step, data.x.shape[0] - self.pred_step, self.pred_step)
             assert len(t_idx) >= self.rollout_step
             t_idx = t_idx[:self.rollout_step]
-            data.pred = data.pos[t_idx + self.pred_step] - data.pos[t_idx]
-            data.pred = data.pred.transpose(0, 1)
-            data.v = data.pos[t_idx] - data.pos[t_idx - self.pred_step]
+            data.v_label = data.x[t_idx + self.pred_step] - data.x[t_idx]
+            data.v_label = data.v_label.transpose(0, 1)
+            data.v = data.x[t_idx] - data.x[t_idx - self.pred_step]
             data.v = data.v.transpose(0, 1)  # [N, T, 3]
-            data.pos = data.pos[t_idx]
-            data.pos = data.pos.transpose(0, 1)
+            data.x = data.x[t_idx]
+            data.x = data.x.transpose(0, 1)
         else:
             raise RuntimeError('Unknown mode for NBody dynamics', self.mode)
 
@@ -103,7 +102,7 @@ class NBody(InMemoryDataset):
         for loc, vel, charges in zip(loc_all, vel_all, charges_all):
             cur_loc, cur_vel = torch.from_numpy(loc).float(), torch.from_numpy(vel).float()
             cur_charge = torch.from_numpy(charges).float()
-            samples.append(Data(pos=cur_loc, v=cur_vel, charge=cur_charge))
+            samples.append(Data(x=cur_loc, v=cur_vel, charge=cur_charge))
         data, slices = self.collate(samples)
         torch.save((data, slices), self.processed_paths[0])
 

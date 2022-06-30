@@ -101,7 +101,7 @@ class DimeNet(nn.Module):
             interaction.reset_parameters()
 
     def forward(self, data):
-        h, pos, batch = data.x, data.pos, data.batch
+        h, pos, batch = data.h, data.x, data.batch
         edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
                                   max_num_neighbors=self.max_num_neighbors)
         i, j, idx_i, idx_j, idx_k, idx_kj, idx_ji = self.triplets(
@@ -127,7 +127,7 @@ class DimeNet(nn.Module):
             h = interaction_block(h, rbf, sbf, idx_kj, idx_ji)
             P += output_block(h, rbf, i)
 
-        data.x, data.h = pos, P
+        data.x_pred, data.h_pred = pos, P
         return data
 
     def triplets(self, edge_index, num_nodes):

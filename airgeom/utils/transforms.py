@@ -46,10 +46,10 @@ class AtomOnehot(object):
 
     def __call__(self,data):
         # atom_type = data.atom_type
-        assert hasattr(data,self.atom_type_name)
+        assert hasattr(data, self.atom_type_name)
         atom_type = getattr(data, self.atom_type_name)
         if self.charge_power == -1:
-            data.x = atom_type
+            data.h = atom_type
         else:
             if self.atom_map is not None:
                 atom_type = torch.tensor([self.atom_map[i.item()] for i in atom_type])
@@ -61,12 +61,12 @@ class AtomOnehot(object):
                 torch.arange(self.charge_power + 1., dtype=torch.float32))
             charge_tensor = charge_tensor.view(atom_type.shape + (1, self.charge_power + 1))
             atom_scalars = (one_hot.unsqueeze(-1) * charge_tensor).view(atom_type.shape + (-1,))
-            data.x = atom_scalars
+            data.h = atom_scalars
         return data
 
 
 QM9_Transform = T.Compose([ToFullyConnected(preserve_edge_attr=False),
-                           AtomOnehot(max_atom_type=10, charge_power=2, atom_type_name='z', atom_list=[1, 6, 7, 8, 9])])
+                           AtomOnehot(max_atom_type=10, charge_power=2, atom_type_name='charge', atom_list=[1, 6, 7, 8, 9])])
 
 
 class MD17_Transform(object):
@@ -117,13 +117,13 @@ class MD17_Transform(object):
     def get_example(self, data):
         assert hasattr(data, self.atom_type_name)
         atom_type = getattr(data, self.atom_type_name)
-        self.x = self.gen_atom_onehot(atom_type)
-        self.edge_index, self.edge_type = self.gen_fully_connected_with_hop(data.pos)
+        self.h = self.gen_atom_onehot(atom_type)
+        self.edge_index, self.edge_type = self.gen_fully_connected_with_hop(data.x)
         self.processed = True
 
     def __call__(self, data):
         assert self.processed
-        data.x = self.x
+        data.h = self.h
         data.edge_index, data.edge_type = self.edge_index, self.edge_type
         return data
 
@@ -131,8 +131,7 @@ class MD17_Transform(object):
 class _NBody_Transform(object):
     def __call__(self, data):
         data.edge_attr = data.charge[data.edge_index[0]] * data.charge[data.edge_index[1]]
-        data.x = torch.norm(data.v, dim=-1, keepdim=True)
-        data['z'] = data.charge
+        data.h = torch.norm(data.v, dim=-1, keepdim=True)
         return data
 
 
@@ -149,7 +148,7 @@ class SelectEdges(object):
             row, col = data.edge_index
             ins = data.instance
             mask = ins[row] == ins[col]
-            data.edge_index = data.edge_index[:,mask]
+            data.edge_index = data.edge_index[:, mask]
             data.edge_attr = data.edge_attr[mask]
         return data
 

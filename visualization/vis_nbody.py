@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import animation
-from airgeom.utils import get_default_args, load_params, ToFullyConnected, set_seed
+from airgeom.utils import get_default_args, load_params, set_seed
+from airgeom.utils.transforms import ToFullyConnected
 from airgeom.dataset import NBody
 import torch_geometric.transforms as T
 import torch
@@ -18,9 +19,9 @@ ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax.zaxis.set_ticklabels([])
 
-idx = 20  # the idx of the system
+idx = 30  # the idx of the system
 
-param_path = 'examples/configs/nbody_config.json'
+param_path = 'examples/configs/nbody_dynamics_config.json'
 args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)

@@ -19,15 +19,18 @@ class DynamicsTrainer(Trainer):
         cur_loss = []
         all_pred = []
         cur_pred = []
-        x_pred, v_pred = None, None
+        x_pred, v_pred, x_true = None, None, None
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
-            x_true = batch_data.pos + batch_data.pred
+            if step % self.rollout_step == 0:
+                x_true = batch_data.x + batch_data.v_label  # pred is v_label
+            else:
+                x_true = x_true + batch_data.v_label
             if step % self.rollout_step > 0:
                 batch_data.v = v_pred
-                batch_data.pos = x_pred
+                batch_data.x = x_pred
             v_pred, loss, v_label = self.task(batch_data)
-            x_pred = (batch_data.pos + v_pred).detach()
+            x_pred = (batch_data.x + v_pred).detach()
             v_pred = v_pred.detach()
             if self.save_pred:
                 cur_pred.append(x_pred.detach().cpu().numpy())
@@ -57,26 +60,28 @@ class DynamicsTrainer(Trainer):
         all_pred = []
         for step, batch_data in enumerate(loader):
             batch_data = batch_data.to(self.device)
-            _v_label = deepcopy(batch_data.pred)
-            x_pred, v_pred = None, None
+            _v_label = deepcopy(batch_data.v_label)
+            x_pred, v_pred, x_true = None, None, None
             cur_all_graph_loss = []
             cur_pred = []
             for t in range(rollout_step):
                 if t == 0:
-                    batch_data.pos = batch_data.pos[:, t, :]
-                    batch_data.pred = _v_label[:, t, :]
+                    batch_data.x = batch_data.x[:, t, :]
+                    batch_data.v_label = _v_label[:, t, :]
                     batch_data.v = batch_data.v[:, t, :]
+                    x_true = batch_data.x + batch_data.v_label
                 else:
-                    batch_data.pos = x_pred
+                    batch_data.x = x_pred
                     batch_data.v = v_pred
-                    batch_data.pred = _v_label[:, t, :]
-                x_true = batch_data.pos + batch_data.pred
-                cur_pred.append(batch_data.pos)
+                    batch_data.v_label = _v_label[:, t, :]
+                    x_true = x_true + batch_data.v_label
+
+                cur_pred.append(batch_data.x)
                 # print(batch_data.pos.shape, batch_data.v.shape, batch_data.pred.shape, batch_data.x.shape)
                 # TODO: revise here, not a good implementation
-                batch_data.x = torch.norm(batch_data.v, dim=-1, keepdim=True)
+                batch_data.h = torch.norm(batch_data.v, dim=-1, keepdim=True)
                 v_pred, loss, v_label = self.task(batch_data)
-                x_pred = (batch_data.pos + v_pred).detach()
+                x_pred = (batch_data.x + v_pred).detach()
                 v_pred = v_pred.detach()
                 cur_rollout_loss = self.mse_loss(x_pred, x_true).mean(dim=-1, keepdim=True)  # [BN, 1]
                 cur_graph_rollout_loss = global_mean_pool(cur_rollout_loss, batch_data.batch)  # [BG, 1]
@@ -84,9 +89,9 @@ class DynamicsTrainer(Trainer):
             cur_all_graph_loss = torch.cat(cur_all_graph_loss, dim=-1)  # [BG, T]
             all_graph_loss.append(cur_all_graph_loss)
             cur_pred = torch.stack(cur_pred, dim=1)  # [BN, T, 3]
-            batch_data.pos = cur_pred
+            batch_data.x = cur_pred
             split_data = batch_data.to_data_list()
-            all_pred.extend([_.pos.transpose(0, 1).detach().cpu().numpy() for _ in split_data])
+            all_pred.extend([_.x.transpose(0, 1).detach().cpu().numpy() for _ in split_data])
         all_graph_loss = torch.cat(all_graph_loss, dim=0).detach().cpu().numpy()  # [Tot_G, T]
         if self.save_pred:
             return all_graph_loss, all_pred  # [Tot_G, T], [Tot_G, T, N, 3]

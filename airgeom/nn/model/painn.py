@@ -108,8 +108,8 @@ class PaiNN(nn.Module):
             return_intermediate=True was used.
         """
         # get tensors from input dictionary
-        atomic_numbers = data.x
-        x = data.pos
+        atomic_numbers = data.h
+        x = data.x
         idx_i, idx_j = data.edge_index
         r_ij = x[idx_j] - x[idx_i]
         n_atoms = atomic_numbers.shape[0]
@@ -140,7 +140,7 @@ class PaiNN(nn.Module):
 
         q = q.squeeze(1)
 
-        data.x = x
-        data.h = q
+        data.x_pred = x
+        data.h_pred = q
         data.vec = mu
         return data

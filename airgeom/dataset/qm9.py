@@ -1,4 +1,5 @@
 from torch_geometric.datasets import QM9 as QM9_pyg
+from airgeom.data import from_pyg
 import torch
 
 atomrefs = {
@@ -24,8 +25,8 @@ atomrefs = {
 
 
 class QM9(QM9_pyg):
-
-    property_list = ['mu', 'alpha', 'homo', 'lumo', 'gap', 'r2', 'zpve', 'u0', 'u298', 'h298', 'g298', 'cv', 'u0_atom', 'u298_atom', 'h298_atom', 'g298_atom']
+    property_list = ['mu', 'alpha', 'homo', 'lumo', 'gap', 'r2', 'zpve', 'u0', 'u298', 'h298', 'g298', 'cv', 'u0_atom',
+                     'u298_atom', 'h298_atom', 'g298_atom']
 
     def __init__(self, root, task, transform=None):
         if isinstance(task, str):
@@ -35,7 +36,8 @@ class QM9(QM9_pyg):
         elif isinstance(task, int):
             self.target_idx = task
             self.task = QM9.property_list[self.target_idx]
-        super(QM9, self).__init__(root, transform=transform)
+        attrs = ['x', 'z', 'pos', 'edge_index', 'edge_attr', 'y', 'name', 'idx']
+        super(QM9, self).__init__(root, transform=transform, pre_transform=from_pyg(attrs=attrs))
 
     def get(self, idx):
         data = super(QM9, self).get(idx)
