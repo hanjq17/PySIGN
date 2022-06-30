@@ -102,16 +102,21 @@ class DimeNet(nn.Module):
 
     def forward(self, data):
         h, pos, batch = data.h, data.x, data.batch
-        edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
-                                  max_num_neighbors=self.max_num_neighbors)
+        # edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
+        #                           max_num_neighbors=self.max_num_neighbors)
+
+        edge_index = data.edge_index
+
         # edge_index = data.edge_index
         i, j, idx_i, idx_j, idx_k, idx_kj, idx_ji = self.triplets(
             edge_index, num_nodes=h.size(0))
+
         dist = (pos[i] - pos[j]).norm(dim=-1)  # calculate distances
 
         # calculate angles
         pos_i = pos[idx_i]
         pos_ji, pos_ki = pos[idx_j] - pos_i, pos[idx_k] - pos_i
+
         a = (pos_ji * pos_ki).sum(dim=-1)
         b = torch.cross(pos_ji, pos_ki).norm(dim=-1)
         angle = torch.atan2(b, a)
@@ -348,10 +353,14 @@ class InteractionBlock(torch.nn.Module):
         x_ji = self.act(self.lin_ji(x))
         x_kj = self.act(self.lin_kj(x))
         x_kj = x_kj * rbf
-        x_kj = torch.einsum('wj,wl,ijl->wi', sbf, x_kj[idx_kj], self.W)
-        x_kj = scatter(x_kj, idx_ji, dim=0, dim_size=x.size(0))
+        
+        if sbf.shape[0] == 0:
+            h = x_ji
+        else:
+            x_kj = torch.einsum('wj,wl,ijl->wi', sbf, x_kj[idx_kj], self.W)
+            x_kj = scatter(x_kj, idx_ji, dim=0, dim_size=x.size(0))
+            h = x_ji + x_kj
 
-        h = x_ji + x_kj
         for layer in self.layers_before_skip:
             h = layer(h)
         h = self.act(self.lin(h)) + x
