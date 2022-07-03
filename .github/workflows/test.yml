@@ -24,19 +24,18 @@ jobs:
           pip install torch_scatter==2.0.7 -f https://data.pyg.org/whl/torch-1.7.1+cpu.html
           pip install torch_sparse==0.6.9 -f https://data.pyg.org/whl/torch-1.7.1+cpu.html
           pip install torch_cluster==1.5.8 -f https://data.pyg.org/whl/torch-1.7.1+cpu.html
+
       - name: Install miscellaneous dependencies
         run: |
           pip install tqdm
           pip install matplotlib
           pip install sympy
           pip install pyyaml
+          pip install lie-learn
+
       - name: Install atom3d dependencies
         run: |
           pip install atom3d
-      - name: Install dgl dependencies
-        run: |
-          pip install dgl==0.4.3.post2
-          pip install lie-learn
 
       - name: Run Nbody System
         run: |

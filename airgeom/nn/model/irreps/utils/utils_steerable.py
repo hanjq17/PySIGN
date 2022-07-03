@@ -9,6 +9,7 @@ from .representations import SphericalHarmonics
 # Solving the constraint coming from the stabilizer of 0 and e
 ################################################################################
 
+
 def get_matrix_kernel(A, eps=1e-10):
     '''
     Compute an orthonormal basis of the kernel (x_1, x_2, ...)
@@ -174,6 +175,7 @@ def get_spherical_from_cartesian(cartesian):
 
     return spherical
 
+
 def test_coordinate_conversion():
     p = np.array([0, 0, -1])
     expected = np.array([1, 0, 0])
@@ -194,7 +196,7 @@ def spherical_harmonics(order, alpha, beta, dtype=None):
     # Y should have dimension 2*order + 1
     return SphericalHarmonics.get(order, theta=math.pi-beta, phi=alpha) 
 
-# @profile
+
 def kron(a, b):
     """
     A part of the pylabyk library: numpytorch.py at https://github.com/yulkang/pylabyk

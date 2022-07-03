@@ -1,6 +1,3 @@
-'''
-Cache in files
-'''
 from functools import wraps, lru_cache
 import pickle
 import gzip
