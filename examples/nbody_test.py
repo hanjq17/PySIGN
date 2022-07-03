@@ -39,9 +39,15 @@ class RadiusLabel(object):
         return data
 
 class PseudoPair(object):
+    counter = 0
     def __call__(self, data):
         data1, data2 = data, data
-        data1.y = torch.randint(2,(1,)).float()
+        if self.counter % 2 == 0:
+            data1.y = torch.tensor(0).float()
+        else:
+            data1.y = torch.tensor(1).float()
+        self.counter += 1
+        # data1.y = torch.randint(2,(1,)).float()
         return data1, data2    
 
 class EnergyForce(object):
