@@ -21,10 +21,10 @@ def get_model_from_args(node_dim, edge_attr_dim, args, dynamics=False):
     elif args.model == 'ET':
         rep_model = EquivariantTransformer(max_z=node_dim, hidden_channels=args.hidden_dim, num_layers=args.n_layers)
     elif args.model == 'TFN':
-        rep_model = TFN(num_layers=args.n_layers // 2, atom_feature_size=node_dim, num_channels=args.hidden_dim ,
+        rep_model = TFN(num_layers=args.n_layers, atom_feature_size=node_dim, num_channels=args.hidden_dim ,
                         num_nlayers=1, num_degrees=2, edge_dim=edge_attr_dim, use_vel=dynamics)
     elif args.model == 'SE3Transformer':
-        rep_model = SE3Transformer(num_layers=args.n_layers // 2, atom_feature_size=node_dim,
+        rep_model = SE3Transformer(num_layers=args.n_layers, atom_feature_size=node_dim,
                                    num_channels=args.hidden_dim, num_nlayers=1, num_degrees=2, edge_dim=edge_attr_dim,
                                    n_heads=2, use_vel=dynamics)
     else:
