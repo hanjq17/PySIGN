@@ -148,14 +148,14 @@ def energyforce_test(model, decoder):
 if __name__ == '__main__':
 
     model_map = {
-        # 'TFN' : ['DifferentialVector'],
-        # 'SE3Transformer' : ['DifferentialVector'],
-        'SchNet' : ['Scalar'],
-        'DimeNet' : ['Scalar'],
-        'EGNN' : ['Scalar', 'DifferentialVector'],
-        'RF' : ['DifferentialVector'],
-        'PaiNN' : ['Scalar', 'EquivariantVector'],
-        'ET' : ['Scalar', 'EquivariantVector']
+        'TFN': ['DifferentialVector'],
+        'SE3Transformer': ['DifferentialVector'],
+        'SchNet': ['Scalar'],
+        'DimeNet': ['Scalar'],
+        'EGNN': ['Scalar', 'DifferentialVector'],
+        'RF': ['DifferentialVector'],
+        'PaiNN': ['Scalar', 'EquivariantVector'],
+        'ET': ['Scalar', 'EquivariantVector']
     }
 
     for model in model_map:
