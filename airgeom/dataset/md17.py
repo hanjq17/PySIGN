@@ -56,10 +56,7 @@ class MD17(InMemoryDataset):
 
     def get(self, idx):
         data = super(MD17, self).get(idx)
-        if self.transform:
-            return self.transform(data)
-        else:
-            return data
+        return data
 
     def mean(self):
         y = self.data.y
@@ -67,7 +64,7 @@ class MD17(InMemoryDataset):
 
     def std(self):
         y = self.data.y
-        return float(y.std())    
+        return float(y.std())
 
     @property
     def raw_file_names(self):
@@ -125,23 +122,40 @@ class MD17(InMemoryDataset):
 
 
 class MD17_Dynamics(MD17):
+
     def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
         super(MD17_Dynamics, self).__init__(root, transform, pre_transform, dataset_arg)
         self.vel_step = vel_step
         self.pred_step = pred_step
-    
-    def get(self, idx):
-        prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
-        next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
-        data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), \
-                                     super(MD17_Dynamics, self).get(prev_idx), \
-                                     super(MD17_Dynamics, self).get(next_idx)
-        data.v = (data.x - data_prev.x) / self.vel_step * self.pred_step
-        data.v_label = data_next.x - data.x
-        if self.transform:
-            return self.transform(data)
+        self.mode = 'one_step'  # or 'rollout'
+        self.rollout_step = None
+
+    def len(self):
+        if self.mode == 'one_step':
+            return super(MD17_Dynamics, self).len()
+        elif self.mode == 'rollout':
+            return super(MD17_Dynamics, self).len() // (self.rollout_step * self.pred_step)
         else:
-            return data
+            raise NotImplementedError()
+
+    def get(self, idx):
+        if self.mode == 'one_step':
+            prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
+            next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
+            data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), super(MD17_Dynamics, self).get(
+                prev_idx), super(MD17_Dynamics, self).get(next_idx)
+            data.v = (data.x - data_prev.x) / self.vel_step * self.pred_step
+            data.v_label = data_next.x - data.x
+        elif self.mode == 'rollout':
+            raise NotImplementedError()
+            # t_idx = torch.arange(start=idx - self.pred_step, end=idx + self.rollout_step * self.pred_step,
+            #                      step=self.pred_step).tolist()
+            # trajectory = [super(MD17_Dynamics, self).get(_) for _ in t_idx]
+            # trajectory = torch.stack(trajectory, dim=1)
+        else:
+            raise NotImplementedError()
+
+        return data
 
     def default_split(self):
         n_train = 9500
@@ -164,8 +178,7 @@ if __name__ == '__main__':
 
     molecules = ['aspirin', 'benzene', 'ethanol', 'malonaldehyde', 'naphthalene', 'salicylic_acid', 'toluene', 'uracil']
 
-
     for mol in molecules:
         base_path = os.path.join(args.base_path, mol)
         os.makedirs(base_path, exist_ok=True)
-        dataset = MD17(base_path, dataset_arg = mol)
+        dataset = MD17(base_path, dataset_arg=mol)

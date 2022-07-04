@@ -31,9 +31,7 @@ def para_comp(n_particle, box_size, T, sample_freq):
 
 
 class NBody(InMemoryDataset):
-    raw_url = None
-    mode = 'one_step'  # or 'rollout'
-    rollout_step = None
+    raw_url = None  # Use data generation instead of downloading
 
     def __init__(self, root, transform=None, pre_transform=None, n_particle=5, num_samples=500,
                  box_size=None, T=5000, sample_freq=100, num_workers=20,
@@ -47,6 +45,8 @@ class NBody(InMemoryDataset):
         assert self.initial_step - self.pred_step >= 0  # since v_input is a differential of positions
         super(NBody, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
+        self.mode = 'one_step'  # or 'rollout'
+        self.rollout_step = None
 
     def len(self):
         return len(self.slices[list(self.slices.keys())[0]]) - 1

@@ -66,7 +66,7 @@ class GConvSE3(nn.Module):
         for d_out in self.f_out.degrees:
             msg = 0
             for m_in, d_in in self.f_in.structure:
-                src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in * (2 * d_in + 1), 1)
+                src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in * (2 * d_in + 1), 1)  # TODO: need check
                 edge = edata[f'({d_in},{d_out})']
                 msg = msg + torch.matmul(edge, src)
             msg = msg.view(msg.shape[0], -1, 2 * d_out + 1)
@@ -77,12 +77,12 @@ class GConvSE3(nn.Module):
                         W = self.kernel_self[f'{d_out}']
                         msg = torch.matmul(W, msg)
                     if self.flavor == 'skip':
-                        dst = node_features[f'{d_out}'][edge_index[1]]
+                        dst = node_features[f'{d_out}'][edge_index[1]]  # TODO: need check
                         W = self.kernel_self[f'{d_out}']
                         msg = msg + torch.matmul(W, dst)
 
             # message passing
-            out = scatter(msg, edge_index[1], dim=0, reduce='mean')
+            out = scatter(msg, edge_index[1], dim=0, reduce='mean')  # TODO: need check
             ret[f'{d_out}'] = out
 
         return ret
@@ -520,15 +520,15 @@ class GConvSE3Partial(nn.Module):
                         src = rel
                     else:
                         # features of src node, shape [edges, m_in*(2l+1), 1]
-                        src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_ori * (2 * d_in + 1), 1)
+                        src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_ori * (2 * d_in + 1), 1)  # TODO: need check
                         # add to feature vector
                         src = torch.cat([src, rel], dim=1)
                 elif self.x_ij == 'add' and d_in == 1 and m_in > 1:
-                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)
+                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)  # TODO: need check
                     rel = (x[edge_index[1]] - x[edge_index[0]]).view(-1, 3, 1)  # TODO: need check
                     src[..., :3, :1] = src[..., :3, :1] + rel
                 else:
-                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)
+                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)  # TODO: need check
                 edge = edata[f'({d_in},{d_out})']
                 msg = msg + torch.matmul(edge, src)
             msg = msg.view(msg.shape[0], -1, 2 * d_out + 1)
@@ -570,7 +570,7 @@ class GMABSE3(nn.Module):
         ret = {}
         for m, d in self.f_value.structure:
             msg = edge_a.unsqueeze(-1).unsqueeze(-1) * edata[f'v{d}']
-            out = scatter(msg, edge_index[1], dim=0, reduce='sum')
+            out = scatter(msg, edge_index[1], dim=0, reduce='sum')  # TODO: need check
             ret[f'{d}'] = out.view(-1, m, 2*d+1)
 
         return ret

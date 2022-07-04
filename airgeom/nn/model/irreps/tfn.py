@@ -31,7 +31,7 @@ class TFN(nn.Module):
         for i in range(self.num_layers-1):
             blocks.append(GConvSE3(fin, fibers['mid'], self_interaction=True, edge_dim=self.edge_dim))
             # blocks.append(GNormSE3(fibers['mid'], num_layers=self.num_nlayers))
-            blocks.append(GNormBias(fibers['mid']))
+            blocks.append(GNormBias(fibers['mid']))  # TODO: check
             fin = fibers['mid']
         blocks.append(GConvSE3(fibers['mid'], fibers['out'], self_interaction=True, edge_dim=self.edge_dim))
         mapping = nn.Linear(self.num_channels_out, out_dim)
