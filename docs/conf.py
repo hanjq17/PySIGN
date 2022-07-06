@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'AirGeom'
-copyright = '2022, AirGeom Team, Tsinghua University'
-author = 'AirGeom Team'
+project = 'PySign'
+copyright = '2022, pysign Team, Tsinghua University'
+author = 'pysign Team'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0'

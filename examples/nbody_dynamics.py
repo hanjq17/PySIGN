@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import NBody
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import DynamicsTrainer
-from airgeom.task import DynamicsPrediction
-from airgeom.utils.transforms import NBody_Transform
+from pysign.dataset import NBody
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import DynamicsTrainer
+from pysign.task import DynamicsPrediction
+from pysign.utils.transforms import NBody_Transform
 from torch_geometric.loader import DataLoader
 import torch
 import os

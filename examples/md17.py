@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import MD17
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import MultiTaskTrainer
-from airgeom.task import EnergyForcePrediction
-from airgeom.utils.transforms import MD17_Transform
+from pysign.dataset import MD17
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import MultiTaskTrainer
+from pysign.task import EnergyForcePrediction
+from pysign.utils.transforms import MD17_Transform
 from torch_geometric.loader import DataLoader
 import torch
 import os

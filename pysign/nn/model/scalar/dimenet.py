@@ -11,7 +11,7 @@ from torch_sparse import SparseTensor
 from torch_scatter import scatter
 from torch_geometric.nn import MessagePassing, radius_graph
 
-from airgeom.nn.model.scalar.schnet import InteractionBlock
+from pysign.nn.model.scalar.schnet import InteractionBlock
 
 
 def swish(x):

@@ -1,13 +1,13 @@
-# AirGeom: A Universal Toolkit for Geometric Graphs
+# PySign: Science Informed Graph Networks in Python
 
-AirGeom Team, Institute for AI Industry Research (AIR), Tsinghua University
+Pyign Team,  Tsinghua University
 
 1. Complete resources.
 2. Widely-covered models.
 3. Uniformed pipelines.
 4. Elaborated toolkits.
 
-![Design](assets/airgeom_fig.png "Design")
+![Design](assets/pysign.png "Design")
 
 ### Matched Enc-Dec for MD
 

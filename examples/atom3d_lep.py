@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import Atom3DDataset
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import PredictionTrainer
-from airgeom.task import Contrastive
-from airgeom.utils.transforms import LEP_Transform
+from pysign.dataset import Atom3DDataset
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import PredictionTrainer
+from pysign.task import Contrastive
+from pysign.utils.transforms import LEP_Transform
 from torch_geometric.loader import DataLoader
 import torch
 

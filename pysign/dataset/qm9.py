@@ -1,5 +1,5 @@
 from torch_geometric.datasets import QM9 as QM9_pyg
-from airgeom.data import from_pyg
+from pysign.data import from_pyg
 import torch
 
 atomrefs = {

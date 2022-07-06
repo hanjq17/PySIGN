@@ -11,7 +11,7 @@ import scipy.spatial as ss
 import os.path as osp
 import copy
 from joblib import Parallel, delayed
-from airgeom.data import from_pyg
+from pysign.data import from_pyg
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
