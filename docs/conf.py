@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'PySign'
-copyright = '2022, pysign Team, Tsinghua University'
-author = 'pysign Team'
+project = 'PySIGN'
+copyright = '2022, PySIGN Team, Tsinghua University'
+author = 'PySIGN Team'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0'

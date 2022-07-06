@@ -1,6 +1,6 @@
-# PySign: Science Informed Graph Networks in Python
+# PySIGN: Science Informed Graph Networks in Python
 
-Pyign Team,  Tsinghua University
+PySIGN Team,  Tsinghua University
 
 1. Complete resources.
 2. Widely-covered models.
