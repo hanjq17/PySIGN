@@ -5,6 +5,7 @@ from .utils_physics import System
 from tqdm import tqdm
 import pickle as pkl
 from joblib import Parallel, delayed
+from .registry import DatasetRegistry
 
 
 __all__ = ['NBody']
@@ -30,6 +31,7 @@ def para_comp(n_particle, box_size, T, sample_freq):
             return X, V, system.charges
 
 
+@DatasetRegistry.register_dataset('nbody_dynamics')
 class NBody(InMemoryDataset):
     raw_url = None  # Use data generation instead of downloading
 

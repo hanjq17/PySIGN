@@ -4,10 +4,12 @@ import numpy as np
 from tqdm import tqdm
 import os
 import argparse
+from .registry import DatasetRegistry
 
 __all__ = ['MD17', 'MD17_Dynamics']
 
 
+@DatasetRegistry.register_dataset('md17')
 class MD17(InMemoryDataset):
     """Machine learning of accurate energy-conserving molecular force fields (Chmiela et al. 2017)
     This class provides functionality for loading MD trajectories from the original dataset, not the revised versions.
@@ -121,6 +123,7 @@ class MD17(InMemoryDataset):
         return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)
 
 
+@DatasetRegistry.register_dataset('md17_dynamics')
 class MD17_Dynamics(MD17):
 
     def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):

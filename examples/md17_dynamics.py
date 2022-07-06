@@ -31,7 +31,7 @@ print('Data ready')
 datasets = dataset.default_split()
 dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size, shuffle=True if split == 'train' else False)
                for split in datasets}
-dataloaders['test'].batch_size = 1  # Single trajectory does not support batch size > 1 now.
+# dataloaders['test'].batch_size = 1  # Single trajectory does not support batch size > 1 now.
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

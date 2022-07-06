@@ -6,12 +6,11 @@ from math import sqrt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from torch_sparse import SparseTensor
 from torch_scatter import scatter
 from torch_geometric.nn import MessagePassing, radius_graph
-
 from pysign.nn.model.scalar.schnet import InteractionBlock
+from ..registry import EncoderRegistry
 
 
 def swish(x):
@@ -28,6 +27,7 @@ def glorot_orthogonal(tensor, scale):
         tensor.data *= scale.sqrt()
 
 
+@EncoderRegistry.register_encoder('DimeNet')
 class DimeNet(nn.Module):
     """
     The directional message passing neural network (DimeNet) by Klicpera et al. 2020

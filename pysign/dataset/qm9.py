@@ -1,6 +1,7 @@
 from torch_geometric.datasets import QM9 as QM9_pyg
 from pysign.data import from_pyg
 import torch
+from .registry import DatasetRegistry
 
 atomrefs = {
     6: [0., 0., 0., 0., 0.],
@@ -24,6 +25,7 @@ atomrefs = {
 }
 
 
+@DatasetRegistry.register_dataset('qm9')
 class QM9(QM9_pyg):
     property_list = ['mu', 'alpha', 'homo', 'lumo', 'gap', 'r2', 'zpve', 'u0', 'u298', 'h298', 'g298', 'cv', 'u0_atom',
                      'u298_atom', 'h298_atom', 'g298_atom']

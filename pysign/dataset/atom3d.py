@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 from atom3d.util.transforms import prot_graph_transform, mol_graph_transform, PairedGraphTransform
 from atom3d.datasets import LMDBDataset
-from torch_geometric.data import Data, Batch, DataLoader, InMemoryDataset
+from torch_geometric.data import Data, Batch, InMemoryDataset
 from torch_geometric.data.separate import separate
 import subprocess
 import scipy.spatial as ss
@@ -12,6 +12,7 @@ import os.path as osp
 import copy
 from joblib import Parallel, delayed
 from pysign.data import from_pyg
+from .registry import DatasetRegistry
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
@@ -137,98 +138,6 @@ class GNNTransformLBA(object):
         return combined_graph
 
 
-def download_dataset(name, out_path, split=None):
-    """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
-
-    :param name: Three-letter code for dataset (not case-sensitive).
-    :type name: str
-    :param out_path: Path to directory in which to save downloaded dataset.
-    :type out_path: str
-    :param split: name of split data to download in LMDB format. Defaults to None, in which case raw (unsplit) dataset is downloaded. Please use :func:`download_split_indices` to get pre-computed split indices for raw datasets.
-    :type split: str
-    """
-
-    name = name.lower()
-    if name == 'smp':
-        if split is None:
-            link = 'https://zenodo.org/record/4911142/files/SMP-raw.tar.gz?download=1'
-        elif split == 'random':
-            link = 'https://zenodo.org/record/4911142/files/SMP-random.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "random".')
-            return
-    elif name == 'ppi':
-        if split is None:
-            link = 'https://zenodo.org/record/4911102/files/PPI-raw.tar.gz?download=1'
-        elif split == 'DIPS':
-            link = 'https://zenodo.org/record/4911102/files/PPI-DIPS-split.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "DIPS".')
-            return
-    elif name == 'res':
-        if split is None:
-            link = 'https://zenodo.org/record/5026743/files/RES-raw.tar.gz?download=1'
-        elif split == 'cath-topology':
-            link = 'https://zenodo.org/record/5026743/files/RES-split-by-cath-topology.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "cath-topology".')
-            return
-    elif name == 'msp':
-        if split is None:
-            link = 'https://zenodo.org/record/4962515/files/MSP-raw.tar.gz?download=1'
-        elif split == 'sequence-identity-30':
-            link = 'https://zenodo.org/record/4962515/files/MSP-split-by-sequence-identity-30.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "sequence-identity-30".')
-            return
-    elif name == 'lba':
-        if split is None:
-            link = 'https://zenodo.org/record/4914718/files/LBA-raw.tar.gz?download=1'
-        elif split == 'sequence-identity-30':
-            link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-30.tar.gz?download=1'
-        elif split == 'sequence-identity-60':
-            link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-60.tar.gz?download=1'
-        else:
-            print(
-                f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
-            return
-    elif name == 'lep':
-        if split is None:
-            link = 'https://zenodo.org/record/4914734/files/LEP-raw.tar.gz?download=1-rri'
-        elif split == 'protein':
-            link = 'https://zenodo.org/record/4914734/files/LEP-split-by-protein.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "protein".')
-            return
-    elif name == 'psr':
-        if split is None:
-            link = 'https://zenodo.org/record/4915648/files/PSR-raw.tar.gz?download=1'
-        elif split == 'year':
-            link = 'https://zenodo.org/record/4915648/files/PSR-split-by-year.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "year".')
-            return
-    elif name == 'rsr':
-        if split is None:
-            link = 'https://zenodo.org/record/4961085/files/RSR-raw.tar.gz?download=1'
-        elif split == 'year':
-            link = 'https://zenodo.org/record/4961085/files/RSR-candidates-split-by-time.tar.gz?download=1'
-        else:
-            print(f'specified split {split} not available. Possible values are "year".')
-            return
-    else:
-        print('Invalid dataset name specified. Possible values are {SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR}')
-
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
-    cmd = f"wget {link} -O {out_path}/{name}.tar.gz"
-    # subprocess.call(cmd, shell=True)
-    print(cmd)
-    cmd2 = f"tar xzvf {out_path}/{name}.tar.gz -C {out_path}"
-    print(cmd2)
-    # subprocess.call(cmd2, shell=True)
-
-
 def iter_samples(lmdb, idx):
     return lmdb[idx]
 
@@ -244,6 +153,7 @@ def get_preprocessed_list(lmdb, num_workers):
     return res
 
 
+@DatasetRegistry.register_dataset('atom3d')
 class Atom3DDataset(InMemoryDataset):
     """Machine learning of accurate energy-conserving molecular force fields (Chmiela et al. 2017)
     This class provides functionality for loading MD trajectories from the original dataset, not the revised versions.
@@ -464,6 +374,4 @@ class Atom3DDataset(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    # download_dataset('lba', 'cached_datasets/atom3d', 'sequence-identity-30')
-    # download_dataset('lep', 'cached_datasets/atom3d', 'protein')
     dataset = Atom3DDataset('cached_datasets/atom3d', 'lep', 'train', dataset_arg='protein')

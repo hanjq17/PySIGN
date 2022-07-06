@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
-
 from ..layer import PaiNNInteraction, PaiNNMixing, replicate_module
 from ..utils import rbf_class_mapping, CosineCutoff
+from .registry import EncoderRegistry
 
 __all__ = ['PaiNN']
 
 
+@EncoderRegistry.register_encoder('PaiNN')
 class PaiNN(nn.Module):
     """PaiNN - polarizable interaction neural network
 

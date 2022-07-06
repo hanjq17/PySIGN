@@ -1,7 +1,9 @@
 import torch.nn as nn
 from ...layer import EGNNLayer
+from ..registry import EncoderRegistry
 
 
+@EncoderRegistry.register_encoder('EGNN')
 class EGNN(nn.Module):
     """
     E(n)-equivariant Graph Neural Network by Satorras et al., 2021

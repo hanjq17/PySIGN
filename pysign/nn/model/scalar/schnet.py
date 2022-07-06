@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-from typing import Optional
 from math import pi as PI
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from torch_geometric.nn import MessagePassing, radius_graph
+from ..registry import EncoderRegistry
 
 
+@EncoderRegistry.register_encoder('SchNet')
 class SchNet(nn.Module):
     """
     Schnet by K.T.Schutt et al. 2017

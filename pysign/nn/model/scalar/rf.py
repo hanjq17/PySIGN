@@ -1,8 +1,10 @@
 import torch.nn as nn
 import torch
 from ...layer import RadialFieldLayer
+from ..registry import EncoderRegistry
 
 
+@EncoderRegistry.register_encoder('RF')
 class RadialField(nn.Module):
     def __init__(self, hidden_nf, edge_attr_nf=0, act_fn=nn.SiLU(), n_layers=4):
         """

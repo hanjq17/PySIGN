@@ -1,8 +1,10 @@
 from torch import nn
 from .modules import GConvSE3, GNormSE3, get_basis_and_r, GSE3Res, GNormBias
 from .fibers import Fiber
+from ..registry import EncoderRegistry
 
 
+@EncoderRegistry.register_encoder('TFN')
 class TFN(nn.Module):
     """SE(3) equivariant GCN"""
     def __init__(self, num_layers: int, atom_feature_size: int,

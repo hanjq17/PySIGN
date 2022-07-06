@@ -2,10 +2,12 @@ import torch
 from torch import nn
 from ..layer import NeighborEmbedding, act_class_mapping, EquivariantMultiHeadAttention
 from ..utils import CosineCutoff, rbf_class_mapping
+from .registry import EncoderRegistry
 
 __all__ = ['EquivariantTransformer']
 
 
+@EncoderRegistry.register_encoder('ET')
 class EquivariantTransformer(nn.Module):
     r"""The TorchMD equivariant Transformer architecture.
 
