@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import animation
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.utils.transforms import ToFullyConnected
-from airgeom.dataset import NBody
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.utils.transforms import ToFullyConnected
+from pysign.dataset import NBody
 import torch_geometric.transforms as T
 import torch
 
@@ -40,7 +40,7 @@ dataset = NBody(root=args.data_path, transform=T.Compose([ToFullyConnected(), NB
                 num_workers=20, initial_step=args.initial_step, pred_step=args.pred_step)
 test_dataset = dataset[900: 1000]
 
-with open('/apdcephfs/share_1364275/jiaqihan/airgeom_exps/exps/nbodyeval/EGNN/eval_result.pkl', 'rb') as f:
+with open('/apdcephfs/share_1364275/jiaqihan/pysign_exps/exps/nbodyeval/EGNN/eval_result.pkl', 'rb') as f:
     all_loss, all_pred = pkl.load(f)  # [tot_G, T, N, 3]
 charge = test_dataset[idx].charge.numpy()
 print(charge)

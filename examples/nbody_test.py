@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import NBody
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import DynamicsTrainer, PredictionTrainer, MultiTaskTrainer
-from airgeom.task import DynamicsPrediction, Prediction, Contrastive, EnergyForcePrediction
-from airgeom.utils.transforms import NBody_Transform
+from pysign.dataset import NBody
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import DynamicsTrainer, PredictionTrainer, MultiTaskTrainer
+from pysign.task import DynamicsPrediction, Prediction, Contrastive, EnergyForcePrediction
+from pysign.utils.transforms import NBody_Transform
 from torch_geometric.loader import DataLoader
 import torch_geometric.transforms as T
 import torch
@@ -39,9 +39,15 @@ class RadiusLabel(object):
         return data
 
 class PseudoPair(object):
+    counter = 0
     def __call__(self, data):
         data1, data2 = data, data
-        data1.y = torch.randint(2,(1,)).float()
+        if self.counter % 2 == 0:
+            data1.y = torch.tensor(0).float()
+        else:
+            data1.y = torch.tensor(1).float()
+        self.counter += 1
+        # data1.y = torch.randint(2,(1,)).float()
         return data1, data2    
 
 class EnergyForce(object):
@@ -148,14 +154,14 @@ def energyforce_test(model, decoder):
 if __name__ == '__main__':
 
     model_map = {
-        # 'TFN' : ['DifferentialVector'],
-        # 'SE3Transformer' : ['DifferentialVector'],
-        'SchNet' : ['Scalar'],
-        'DimeNet' : ['Scalar'],
-        'EGNN' : ['Scalar', 'DifferentialVector'],
-        'RF' : ['DifferentialVector'],
-        'PaiNN' : ['Scalar', 'EquivariantVector'],
-        'ET' : ['Scalar', 'EquivariantVector']
+        'TFN': ['DifferentialVector'],
+        'SE3Transformer': ['DifferentialVector'],
+        'SchNet': ['Scalar'],
+        'DimeNet': ['Scalar'],
+        'EGNN': ['Scalar', 'DifferentialVector'],
+        'RF': ['DifferentialVector'],
+        'PaiNN': ['Scalar', 'EquivariantVector'],
+        'ET': ['Scalar', 'EquivariantVector']
     }
 
     for model in model_map:

@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import QM9
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import PredictionTrainer
-from airgeom.task import Prediction
-from airgeom.utils.transforms import QM9_Transform
+from pysign.dataset import QM9
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import PredictionTrainer
+from pysign.task import Prediction
+from pysign.utils.transforms import QM9_Transform
 from torch_geometric.loader import DataLoader
 import torch
 

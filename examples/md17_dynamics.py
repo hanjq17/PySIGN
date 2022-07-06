@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import MD17_Dynamics
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import DynamicsTrainer
-from airgeom.task import DynamicsPrediction
-from airgeom.utils.transforms import MD17_Transform
+from pysign.dataset import MD17_Dynamics
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import DynamicsTrainer
+from pysign.task import DynamicsPrediction
+from pysign.utils.transforms import MD17_Transform
 from torch_geometric.loader import DataLoader
 import torch
 import os
@@ -31,7 +31,7 @@ print('Data ready')
 datasets = dataset.default_split()
 dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size, shuffle=True if split == 'train' else False)
                for split in datasets}
-dataloaders['test'].batch_size = 1  # Single trajectory does not support batch size > 1 now.
+# dataloaders['test'].batch_size = 1  # Single trajectory does not support batch size > 1 now.
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
