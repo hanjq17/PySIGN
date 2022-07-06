@@ -1,24 +1,31 @@
-import argparse
 import json
 import yaml
 
-def get_default_args():
-    parser = argparse.ArgumentParser(description='DefaultArgs')
-    parser.add_argument('--exp_name', type=str, default='exp', metavar='N', help='experiment_name')
-    parser.add_argument('--batch_size', type=int, default=128, metavar='N', help='input batch size for training')
-    parser.add_argument('--epoch', type=int, default=100, metavar='N', help='number of epochs')
-    parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
-    parser.add_argument('--eval_epoch', type=int, default=1, metavar='N', help='frequency of evaluation')
-    parser.add_argument('--lr', type=float, default=5e-4, metavar='N', help='learning rate')
-    parser.add_argument('--hidden_dim', type=int, default=64, metavar='N', help='hidden dim')
-    parser.add_argument('--model', type=str, default='EGNN', metavar='N', help='the model to employ')
-    parser.add_argument('--n_layers', type=int, default=4, metavar='N', help='number of layers for the autoencoder')
-    parser.add_argument('--dataset', type=str, default="QM9", metavar='N', help='the dataset')
-    parser.add_argument('--weight_decay', type=float, default=1e-6, metavar='N', help='weight decay')
-    parser.add_argument('--data_dir', type=str, default='saved_dataset', help='Data directory.')
 
-    args = parser.parse_args()
-    return args
+class Args:
+    def __init__(self):
+        pass
+
+
+def get_default_args():
+    default_args = Args()
+    default_args_dict = {
+        'exp_name': 'exp',
+        'batch_size': 128,
+        'epoch': 100,
+        'seed': 1,
+        'eval_epoch': 1,
+        'lr': 5e-4,
+        'hidden_dim': 64,
+        'model': 'EGNN',
+        'n_layers': 4,
+        'dataset': 'qm9',
+        'weight_decay': 1e-6,
+        'data_dir': 'cached_datasets'
+    }
+    for k, v in default_args_dict.items():
+        setattr(default_args, k, v)
+    return default_args
 
 
 def load_params(args, param_path):
@@ -34,7 +41,7 @@ def load_params(args, param_path):
 
     with open(param_path, 'r') as f:
         params = load_func(f)
-    for k in params:
-        setattr(args, k, params[k])
+    for k, v in params.items():
+        setattr(args, k, v)
     return args
 

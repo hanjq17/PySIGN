@@ -1,9 +1,14 @@
+import argparse
 import sys
 sys.path.append('./')
-from pysign.benchmark.basic import BenchmarkQM9, BenchmarkMD17, BenchmarkMD17Dynamics, BenchmarkNBody
+from pysign.benchmark import BenchmarkRegistry
 
-# benchmark = BenchmarkQM9()
-# benchmark = BenchmarkMD17()
-# benchmark = BenchmarkMD17Dynamics()
-benchmark = BenchmarkNBody()
+
+parser = argparse.ArgumentParser(description='BenchmarkDemo')
+parser.add_argument('--benchmark', '-b', type=str,
+                    help='benchmark name, currently supporting:' + ','.join([name for name in BenchmarkRegistry.__iter__()]))
+args = parser.parse_args()
+
+benchmark_fn = BenchmarkRegistry.get_benchmark(args.benchmark)
+benchmark = benchmark_fn()
 benchmark.launch()

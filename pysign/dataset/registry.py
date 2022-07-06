@@ -3,6 +3,9 @@ import typing as _typing
 from torch_geometric.data.dataset import Dataset
 
 
+__all__ = ['DatasetRegistry']
+
+
 class DatasetRegistry(RegistryBase):
     @classmethod
     def register_dataset(cls, dataset_name: str) -> _typing.Callable[

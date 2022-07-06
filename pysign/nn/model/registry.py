@@ -3,6 +3,9 @@ import typing as _typing
 from torch.nn import Module
 
 
+__all__ = ['EncoderRegistry']
+
+
 class EncoderRegistry(RegistryBase):
     @classmethod
     def register_encoder(cls, encoder_name: str) -> _typing.Callable[
