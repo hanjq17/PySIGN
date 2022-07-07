@@ -72,7 +72,7 @@ def prediction_test(model):
     args.model_save_path = os.path.join(model_save_path, 'prediction', args.model)
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                      decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=False)
+                        decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=False)
     trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
     trainer.loop()
 
@@ -97,7 +97,7 @@ def dynamics_test(model, decoding, vector_method):
                                                                                vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                      decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
+                        decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
 
     # task = DynamicsPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
     trainer = DynamicsTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True,

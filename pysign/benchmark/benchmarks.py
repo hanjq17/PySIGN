@@ -36,7 +36,7 @@ class BenchmarkQM9(Benchmark):
         return False
 
 
-@BenchmarkRegistry.register_benchmark('benchmark_md17')
+@BenchmarkRegistry.register_benchmark('benchmark_md17_energy_force')
 class BenchmarkMD17(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
