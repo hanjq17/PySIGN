@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./')
-from airgeom.dataset import QM9
-from airgeom.nn.model import get_model_from_args
-from airgeom.utils import get_default_args, load_params, set_seed
-from airgeom.trainer import ConformationTrainer
-from airgeom.task import ConformationGeneration
-from airgeom.utils.transforms import QM9_Transform
+from pysign.dataset import QM9
+from pysign.nn.model import get_model_from_args
+from pysign.utils import get_default_args, load_params, set_seed
+from pysign.trainer import ConformationTrainer
+from pysign.task import ConformationGeneration
+from pysign.utils.transforms import QM9_Transform
 from torch_geometric.loader import DataLoader
 import torch
 import os
@@ -19,7 +19,7 @@ args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)
 
-dataset = QM9(root=args.data_path, task=args.target, transform=QM9_Transform)
+dataset = QM9(root=args.data_path, task='alpha', transform=QM9_Transform)
 print('Data ready')
 
 datasets = dataset.default_split()
