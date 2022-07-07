@@ -166,21 +166,18 @@ def energyforce_test(model, decoding, vector_method):
                       target=['scalar', 'vector'], loss_weight=[0.2, 0.8], return_outputs=False, dynamics=False)
     trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=True)
 
-    # task = EnergyForcePrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder, loss='MAE')
-    # trainer = MultiTaskTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=True)
-
     trainer.loop()
 
 
 if __name__ == '__main__':
 
     model_map = {
-        # 'TFN': [('MLP', 'diff')],
-        # 'SE3Transformer': [('MLP', 'diff')],
-        # 'SchNet': [('MLP', 'gradient')],
-        # 'DimeNet': [('MLP', 'gradient')],
-        # 'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
-        # 'RF': [('MLP', 'diff')],
+        'TFN': [('MLP', 'diff')],
+        'SE3Transformer': [('MLP', 'diff')],
+        'SchNet': [('MLP', 'gradient')],
+        'DimeNet': [('MLP', 'gradient')],
+        'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
+        'RF': [('MLP', 'diff')],
         'PaiNN': [('MLP', 'diff'), ('GatedBlock', None)],
         'ET': [('MLP', 'diff'), ('GatedBlock', None)],
     }
