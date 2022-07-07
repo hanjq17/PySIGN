@@ -97,26 +97,19 @@ We currently support 4 benchmarks with various tasks.
 
 N-body is a simple dataset simulating the dynamics trajectories for several charged particals in a physical system. The task is to predict the trajectory given an initial state.
 
-All supported tasks are registered in ``EncoderRegistry``.
+All supported benchmarks are registered in ``BenchmarkRegistry``.  For example, one can launch a QM9 benchmark as follows.
 
-```python
-from pysign.benchmark import BenchmarkRegistry
-
-parser = argparse.ArgumentParser(description='BenchmarkDemo')
-parser.add_argument('--benchmark', '-b', type=str,
-                    help='benchmark name, currently supporting:' + ','.join([name for name in BenchmarkRegistry.__iter__()]))
-args = parser.parse_args()
-
-benchmark_fn = BenchmarkRegistry.get_benchmark(args.benchmark)
-benchmark = benchmark_fn()
-benchmark.launch()
+```shell
+python examples/run_benchmark.py -b benchmark_qm9
 ```
 
-### Trajectories on MD17
+### Visualization
+
+#### Trajectories on MD17
 
 ![MD17](assets/md17_dynamics.gif "MD17")
 
-### Trajectories on NBody
+#### Trajectories on N-body
 
 ![NBody](assets/nbody.gif "NBody")
 
