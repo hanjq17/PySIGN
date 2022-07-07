@@ -52,7 +52,8 @@ class GatedEquivariantBlock(nn.Module):
         nn.init.xavier_uniform_(self.update_net[2].weight)
         self.update_net[2].bias.data.fill_(0)
 
-    def forward(self, x, v):
+    def forward(self, xv):
+        x, v = xv
         vec1 = torch.norm(self.vec1_proj(v), dim=-2)
         vec2 = self.vec2_proj(v)
 
@@ -89,7 +90,7 @@ class GeneralPurposeDecoder(nn.Module):
 
         elif self.decoding == 'GatedBlock':
             self.decoder = nn.Sequential(
-                GatedEquivariantBlock(self.hidden_dim, self.hidden_dim, self.hidden_dim // 2,
+                GatedEquivariantBlock(self.hidden_dim, self.hidden_dim // 2, self.hidden_dim // 2,
                                       activation=activation, scalar_activation=True),
                 GatedEquivariantBlock(self.hidden_dim // 2, 1, activation=activation)
             )
@@ -116,7 +117,7 @@ class GeneralPurposeDecoder(nn.Module):
             h = self.decoder(h)
         elif self.decoding == 'GatedBlock':
             v = data.vec
-            h, v = self.decoder(h, v)
+            h, v = self.decoder((h, v))
             v = v.squeeze(-1)
         else:
             pass

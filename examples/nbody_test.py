@@ -94,7 +94,7 @@ def dynamics_test(model, decoding, vector_method):
 
     args.model_save_path = os.path.join(model_save_path, 'dynamics', '_'.join([args.model,
                                                                                decoding if decoding is not None else '',
-                                                                               vector_method]))
+                                                                               vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
                       decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
@@ -159,7 +159,7 @@ def energyforce_test(model, decoding, vector_method):
 
     args.model_save_path = os.path.join(model_save_path, 'energyforce', '_'.join([args.model,
                                                                                   decoding if decoding is not None else '',
-                                                                                  vector_method]))
+                                                                                  vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, rep_dim=args.hidden_dim, output_dim=1, task_type='Regression',
                       loss='MAE', decoding=decoding, vector_method=vector_method, scalar_pooling='sum',
@@ -175,12 +175,12 @@ def energyforce_test(model, decoding, vector_method):
 if __name__ == '__main__':
 
     model_map = {
-        'TFN': [('MLP', 'diff')],
-        'SE3Transformer': [('MLP', 'diff')],
-        'SchNet': [('MLP', 'gradient')],
-        'DimeNet': [('MLP', 'gradient')],
-        'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
-        'RF': [('MLP', 'diff')],
+        # 'TFN': [('MLP', 'diff')],
+        # 'SE3Transformer': [('MLP', 'diff')],
+        # 'SchNet': [('MLP', 'gradient')],
+        # 'DimeNet': [('MLP', 'gradient')],
+        # 'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
+        # 'RF': [('MLP', 'diff')],
         'PaiNN': [('MLP', 'diff'), ('GatedBlock', None)],
         'ET': [('MLP', 'diff'), ('GatedBlock', None)],
     }
