@@ -1,4 +1,8 @@
 from ..utils import get_optimizer, get_scheduler, StatsCollector, EarlyStopping, SavingHandler
+import numpy as np
+import scipy.stats
+from sklearn.metrics import roc_auc_score, average_precision_score
+import torch
 
 
 class Trainer(object):
@@ -17,6 +21,8 @@ class Trainer(object):
         self.model_saver = SavingHandler(self.task, save_path=args.model_save_path,
                                          lower_is_better=lower_is_better, max_instances=5)
 
+        self.full_eval_metrics_flag = ('scalar' in self.task.target) and self.task.return_outputs
+
     def train_epoch(self):
         train_loader = self.dataloaders.get('train')
         for step, batch_data in enumerate(train_loader):
@@ -25,23 +31,95 @@ class Trainer(object):
             else:
                 batch_data = batch_data.to(self.device)
             self.optimizer.zero_grad()
-            _, loss, y = self.task(batch_data)
-            self.stats.update_step({'train_loss': loss})
-            loss = loss.mean()
-            loss.backward()
+            tot_loss, all_loss, outputs = self.task(batch_data)
+            self.stats.update_step({'train_loss': tot_loss})
+            tot_loss = tot_loss.mean()
+            tot_loss.backward()
             self.optimizer.step()
             if self.verbose:
                 if step % 40 == 0:
-                    print('Step: {:4d} | Train Loss: {:.6f}'.format(step, loss.item()))
+                    format_str = ''
+                    if len(all_loss) > 1:  # The multi-task scenario
+                        for k, v in all_loss.items():
+                            if k.startswith('loss_'):
+                                cur_loss_name = k[5:]
+                                format_str += f' | {cur_loss_name}: {v.mean().item()}'
+                    print('Step: {:4d} | Train Loss: {:.6f}'.format(step, tot_loss.item()) + format_str)
 
     def evaluate(self, valid=False):
         loader = self.dataloaders.get('val') if valid else self.dataloaders.get('test')
-        all_loss = []
+        loss_recorder = {'loss': []}
+        output_recorder = []
+
         for step, batch_data in enumerate(loader):
-            batch_data = batch_data.to(self.device)
-            _, loss, y = self.task(batch_data)
-            all_loss.append(loss.detach().cpu().numpy())
-        return {'loss': self.stats.get_averaged_loss(all_loss)}
+
+            if isinstance(batch_data, list):
+                batch_data = [_.to(self.device) for _ in batch_data]
+            else:
+                batch_data = batch_data.to(self.device)
+
+            tot_loss, all_loss, outputs = self.task(batch_data)
+            loss_recorder['loss'].append(tot_loss.detach().cpu().numpy())
+
+            if len(all_loss) > 1:  # The multi-task scenario
+                for k, v in all_loss.items():
+                    if k.startswith('loss_'):
+                        cur_loss_name = k[5:]
+                        if cur_loss_name in loss_recorder:
+                            loss_recorder[cur_loss_name].append(v.detach().cpu().numpy())
+                        else:
+                            loss_recorder[cur_loss_name] = [v.detach().cpu().numpy()]
+
+            if self.full_eval_metrics_flag:
+                # TODO: should this extend to multitask scenario?
+                pred, y = outputs['scalar']
+                if self.task.task_type == 'Regression':
+                    res = [torch.nn.L1Loss(reduction='none')(pred, y).detach().cpu().numpy(),
+                           torch.nn.MSELoss(reduction='none')(pred, y).detach().cpu().numpy(),
+                           pred.detach().cpu().numpy(),
+                           y.detach().cpu().numpy()]
+                elif self.task.task_type == 'BinaryClassification':
+                    temp = torch.sigmoid(pred)
+                    res = [((temp > 0.5).long() == y).float().detach().cpu().numpy(),
+                           temp.detach().cpu().numpy(),
+                           y.detach().cpu().numpy()]
+                elif self.task.task_type == 'MultiClassification':
+                    res = [(torch.argmax(pred).long() == y).float().detach().cpu().numpy()]
+                else:
+                    raise NotImplementedError('Not implement task type:', self.task.task_type)
+                output_recorder.append(res)
+
+        metrics = {k: self.stats.get_averaged_loss(v) for k, v in loss_recorder.items()}
+        # Compute full evaluation metrics
+        if self.full_eval_metrics_flag:
+            if self.task.task_type == 'Regression':
+                mae = self.stats.get_averaged_loss([_[0] for _ in output_recorder])
+                metrics['mae'] = mae
+                mse = self.stats.get_averaged_loss([_[1] for _ in output_recorder])
+                metrics['mse'] = mse
+                metrics['rmse'] = np.sqrt(mse)
+                y_pred = np.concatenate([_[2] for _ in output_recorder], axis=0)
+                y_true = np.concatenate([_[3] for _ in output_recorder], axis=0)
+                pearson = np.corrcoef(y_true, y_pred)[0, 1]
+                spearmanr = scipy.stats.spearmanr(y_true, y_pred)[0]
+                metrics['pearson'] = pearson
+                metrics['spearmanr'] = spearmanr
+            elif self.task.task_type == 'BinaryClassification':
+                acc = self.stats.get_averaged_loss([_[0] for _ in output_recorder])
+                metrics['acc'] = acc
+                y_pred = np.concatenate([_[1] for _ in output_recorder], axis=0)
+                y_true = np.concatenate([_[2] for _ in output_recorder], axis=0)
+                auroc = roc_auc_score(y_true, y_pred)
+                auprc = average_precision_score(y_true, y_pred)
+                metrics['auroc'] = auroc
+                metrics['auprc'] = auprc
+            elif self.task.task_type == 'MultiClassification':
+                acc = self.stats.get_averaged_loss([_[0] for _ in output_recorder])
+                metrics['acc'] = acc
+            else:
+                raise NotImplementedError('Not implement task type:', self.task.task_type)
+
+        return metrics
 
     def loop(self):
         for ep in range(self.args.epoch):

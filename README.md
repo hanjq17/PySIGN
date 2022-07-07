@@ -1,4 +1,4 @@
-# PySIGN: Science Informed Graph Networks in Python
+# PySIGN: Science Informed Graph Networks
 
 PySIGN Team,  Tsinghua University
 
@@ -8,6 +8,22 @@ PySIGN Team,  Tsinghua University
 4. Elaborated toolkits.
 
 ![Design](assets/pysign.png "Design")
+
+
+
+
+
+### Encoder
+
+xxx scalar/ irreps
+
+
+
+### Decoder
+
+decoder_module and operation (diff / gradient)
+
+
 
 ### Matched Enc-Dec for MD
 
@@ -21,6 +37,28 @@ PySIGN Team,  Tsinghua University
 | PaiNN          | &#10004; | &#10004;          |                    |
 | ET             | &#10004; | &#10004;          |                    |
 
+
+
+### Task
+
+Prediction / contrastive
+
+Prediction: multitask, multiple evaluation metrics
+
+
+
+### Dataset & Benchmark
+
+QM9: xxx,  -> prediction task
+
+
+
+
+
+
+
+
+
 ### Trajectories on MD17
 
 ![MD17](assets/md17_dynamics.gif "MD17")
@@ -29,3 +67,10 @@ PySIGN Team,  Tsinghua University
 ### Trajectories on NBody
 
 ![NBody](assets/nbody.gif "NBody")
+
+
+### Core Developers
+
+Jiaqi Han: hanjq21@mails.tsinghua.edu.cn
+
+Rui Jiao: jiaor21@mails.tsinghua.edu.cn

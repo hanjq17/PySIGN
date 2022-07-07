@@ -65,8 +65,14 @@ class AtomOnehot(object):
         return data
 
 
-QM9_Transform = T.Compose([ToFullyConnected(preserve_edge_attr=False),
-                           AtomOnehot(max_atom_type=10, charge_power=2, atom_type_name='charge', atom_list=[1, 6, 7, 8, 9])])
+class QM9_Transform(object):
+    def __init__(self, charge_power):
+        self.transform = T.Compose([ToFullyConnected(preserve_edge_attr=False),
+                                    AtomOnehot(max_atom_type=10, charge_power=charge_power,
+                                               atom_type_name='charge', atom_list=[1, 6, 7, 8, 9])])
+
+    def __call__(self, data):
+        return self.transform(data)
 
 
 class MD17_Transform(object):

@@ -39,6 +39,7 @@ class RadialField(nn.Module):
         :return: The updated data object.
         """
         x = data.x
+        h = data.h
         edges = data.edge_index
         edge_attr = data.edge_attr
         if hasattr(data, 'v'):
@@ -49,4 +50,5 @@ class RadialField(nn.Module):
         for i in range(self.n_layers):
             x, _ = self._modules["gcl_%d" % i](x, vel_norm, v, edges, edge_attr)
         data.x_pred = x
+        data.h_pred = h
         return data

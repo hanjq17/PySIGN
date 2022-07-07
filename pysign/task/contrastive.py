@@ -12,8 +12,10 @@ class Contrastive(Prediction):
     :param output_dim: the output dimension for computing loss.
     :param rep_dim: the dimension of the representation.
     """
-    def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE'):
-        super(Contrastive, self).__init__(rep, output_dim, rep_dim, task_type, loss)
+    def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE',
+                 return_outputs=False, dynamics=False):
+        super(Contrastive, self).__init__(rep, output_dim, rep_dim, task_type, loss,
+                                          return_outputs=return_outputs, dynamics=dynamics)
         # self.activation = nn.ReLU()  # TODO: use args as activation
 
     def get_decoder(self):
@@ -44,6 +46,12 @@ class Contrastive(Prediction):
         rep = torch.cat((rep1, rep2), dim=-1)
         pred = self.decoder(rep)
         pred = pred.squeeze(-1)
-        loss = self.loss(pred, data1.y)
-        return pred, loss, data1.y
+        y = data1.y
+        loss = self.loss(pred, y)
+        if self.return_outputs:
+            outputs = {'scalar': (pred, y)}
+        else:
+            outputs = {}
+        return loss, {'scalar': loss}, outputs
+
 

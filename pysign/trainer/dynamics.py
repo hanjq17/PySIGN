@@ -80,7 +80,9 @@ class DynamicsTrainer(Trainer):
                 
                 # TODO: revise here, not a good implementation
                 batch_data.h = torch.norm(batch_data.v, dim=-1, keepdim=True)
-                v_pred, loss, v_label = self.task(batch_data)
+                loss, _, outputs = self.task(batch_data)
+                v_pred, v_label = outputs['vector']
+                # v_pred, loss, v_label = self.task(batch_data)
                 x_pred = (batch_data.x + v_pred).detach()
                 v_pred = v_pred.detach()
                 cur_rollout_loss = self.mse_loss(x_pred, x_true).mean(dim=-1, keepdim=True)  # [BN, 1]
