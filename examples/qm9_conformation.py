@@ -27,25 +27,24 @@ dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size, sh
                for split in datasets}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-rep_model = get_model_from_args(node_dim=15, edge_attr_dim=0, args=args)
+rep_model = get_model_from_args(node_dim=15 + args.hidden_dim, edge_attr_dim=0, args=args)
 
 task = ConformationGeneration(rep=rep_model, rep_dim=args.hidden_dim, num_steps=args.num_steps, loss='MSE')
 trainer = ConformationTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
-trainer.loop()
+print('start training')
+# trainer.loop()
 
-# if args.test:
-#     trainer.model_saver.load(epoch='best')
-# 
-#     all_loss, all_pred = trainer.evaluate_rollout(valid=False)
-# 
-#     temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
-#     print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
-# 
-#     out_dir = os.path.join(args.eval_result_path, '_'.join([args.model, args.decoder]), args.molecule)
-#     os.makedirs(out_dir, exist_ok=True)
-#     with open(os.path.join(out_dir, 'eval_result.pkl'), 'wb') as f:
-#         pickle.dump((all_loss, all_pred), f)
-#     print('Saved to', os.path.join(out_dir, 'eval_result.pkl'))
+if args.test:
+    trainer.model_saver.load(epoch='best')
 
+    all_loss, all_pred = trainer.evaluate_rollout(valid=False)
 
+    temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
+    print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
+
+    out_dir = os.path.join(args.eval_result_path, '_'.join([args.model, args.decoder]), args.molecule)
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, 'eval_result.pkl'), 'wb') as f:
+        pickle.dump((all_loss, all_pred), f)
+    print('Saved to', os.path.join(out_dir, 'eval_result.pkl'))

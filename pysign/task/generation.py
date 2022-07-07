@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from torch.nn import Linear, MSELoss, Module, L1Loss
 from torch_geometric.nn import global_add_pool
 from .basic import BasicTask
@@ -5,19 +7,26 @@ from .utils.output_modules import *
 from ..nn.utils import SinusoidalPosEmb
 from torch.autograd import grad
 import torch.nn as nn
+from torch_scatter import scatter_mean
 
 
 def linear_beta_schedule(timesteps):
-    scale = 1000 / timesteps
-    beta_start = scale * 0.0001
-    beta_end = scale * 0.02
-    return torch.linspace(beta_start, beta_end, timesteps, dtype = torch.float64)
+    scale = 5000 / timesteps
+    beta_start = scale * 1e-7
+    beta_end = scale * 2e-3
+    return torch.linspace(beta_start, beta_end, timesteps, dtype = torch.float32)
 
 
 def extract(a, t, x_shape):
     b, *_ = t.shape
     out = a.gather(-1, t)
     return out.reshape(b, *((1,) * (len(x_shape) - 1)))
+
+
+def centering(x, node2graph):
+    center = scatter_mean(x, index=node2graph, dim=0)
+    x = x - center.index_select(0, node2graph)
+    return x
 
 
 class ConformationGeneration(BasicTask):
@@ -96,16 +105,19 @@ class ConformationGeneration(BasicTask):
         """
         h, x = data.h.clone(), data.x.clone()
 
+        # normalize
+        x = centering(x, data.batch)
+
         # add time step embedding
         t = torch.randint(0, self.num_steps, size=(data.num_graphs,), device=h.device).long()
         t = t.index_select(0, data.batch)  # [N]
         t_emb = self.time_mlp(t)  # [N, rep_dim]
-        h = h + t_emb
+        h = torch.cat([h, t_emb], dim=1)
 
         # add noise
         noise = torch.randn_like(x)
-        x = self.sqrt_alphas_cumprod.index_select(0, t) * x + \
-            self.sqrt_one_minus_alphas_cumprod.index_select(0, t) * noise
+        x = self.sqrt_alphas_cumprod.to(x.device).index_select(0, t).unsqueeze(-1) * x + \
+            self.sqrt_one_minus_alphas_cumprod.to(x.device).index_select(0, t).unsqueeze(-1) * noise
         data.v_label = noise
 
         data.h, data.x = h, x
@@ -114,5 +126,26 @@ class ConformationGeneration(BasicTask):
         loss = self.loss(output, data.v_label).sum(dim=-1)
         return output, loss, data.v_label
 
-
-
+    def generate(self, data):
+        """
+        Generate conformation through 2D data solely. The data object only needs atom features
+        excluding coordinations
+        """
+        with torch.no_grad():
+            h = data.h
+            x = centering(torch.randn(h.shape[0], 3, device=h.device), data.batch)
+            original_x = data.x
+            data.x = x
+            for i in tqdm(reversed(range(0, self.num_steps)), total=self.num_steps):
+                t = torch.zeros(h.shape[0], device=h.device) + i
+                t_emb = self.time_mlp(t)
+                data.h = torch.cat([h, t_emb], dim=1)
+                eps = self.decoder(self.rep(data))
+                mean = (1. / torch.sqrt(1 - self.betas[i])) * (x - self.betas[i] / self.sqrt_one_minus_alphas_cumprod[i] * eps)
+                noise = torch.randn_like(x)
+                sigma = torch.sqrt(self.betas[i])
+                x = mean + sigma * noise
+                x = centering(x, data.batch)
+                data.x = x
+        data.x = original_x
+        return x

@@ -8,7 +8,7 @@
     "model": "EGNN",
     "decoder": "DifferentialVector",
     "n_layers": 4,
-    "num_steps": 1000,
+    "num_steps": 5000,
     "data_path": "/data/private/kxz/cached_datasets/qm9",
     "model_save_path": "/data/private/kxz/tmp",
     "eval_result_path": "/data/private/kxz/tmp",
