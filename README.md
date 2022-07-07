@@ -67,14 +67,16 @@ The prediction task predicts the scaler or vector features given a single 3D gra
 from pysign.task import Prediction
 
 task = Prediction(rep=model, output_dim=1, rep_dim=128, task_type='Regression', loss='MAE',
-                    decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=False)
+	              decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', 
+	              return_outputs=False)
 ```
 
 Meanwhile, one can also conduct a dynamics prediction task by switching the parameters, which returns vector features for each node.
 
 ```python
 task = Prediction(rep=model, output_dim=1, rep_dim=128, task_type='Regression', loss='MAE',
-                    decoding='MLP', vector_method='gradient', target='vector', dynamics=True, return_outputs=True)
+                  decoding='MLP', vector_method='gradient', target='vector', dynamics=True, 
+                  return_outputs=True)
 ```
 
 The contrastive task predicts the difference for multiple 3D graphs.
@@ -82,8 +84,8 @@ The contrastive task predicts the difference for multiple 3D graphs.
 ```python
 from pysign.task import Contrastive
 
-task = Contrastive(rep=model, output_dim=1, rep_dim=128, task_type='BinaryClassification', loss='BCE',
-                    return_outputs=True, dynamics=False)
+task = Contrastive(rep=model, output_dim=1, rep_dim=128, task_type='BinaryClassification', 
+	               loss='BCE', return_outputs=True, dynamics=False)
 ```
 
 ### Dataset & Benchmark
