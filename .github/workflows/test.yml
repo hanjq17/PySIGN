@@ -37,6 +37,11 @@ jobs:
         run: |
           pip install atom3d
 
+      - name: Run Equivariance & Invariance Test
+        run: |
+          python examples/equivariance_test.py
+
       - name: Run Nbody System
         run: |
           python examples/nbody_test.py
+

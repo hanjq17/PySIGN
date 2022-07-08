@@ -2,6 +2,7 @@ from .scalar import *
 from .painn import *
 from .et import *
 from .irreps import TFN, SE3Transformer
+from .general_decoder import GeneralPurposeDecoder
 from .registry import EncoderRegistry
 
 

@@ -1,4 +1,3 @@
-from .prediction import Prediction, EnergyForcePrediction
-from .dynamics import DynamicsPrediction
+from .prediction import Prediction
 from .contrastive import Contrastive
 from .generation import ConformationGeneration

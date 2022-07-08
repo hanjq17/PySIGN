@@ -1,5 +1,6 @@
 {
         "exp_name": "QM9",
+        "charge_power": 2,
         "batch_size": 16,
         "epoch": 300,
         "seed": 1,

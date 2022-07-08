@@ -17,7 +17,7 @@ class Benchmark(object):
         self.datasets = None
         self.encoder = None
         self._trainer = None
-        self.specific_args = {}
+        self.model_specific_args = {}
         self.trainer_specific_args = {}
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if not hasattr(self.args, 'eval_result_path'):
@@ -46,7 +46,7 @@ class Benchmark(object):
             split: DataLoader(self.datasets[split],
                               batch_size=self.args.batch_size, shuffle=True if split == 'train' else False)
             for split in self.datasets}
-        encoder = get_model_from_args(args=self.args, dynamics=self.dynamics, **self.specific_args)
+        encoder = get_model_from_args(args=self.args, dynamics=self.dynamics, **self.model_specific_args)
         trainer = self.trainer(dataloaders=dataloaders, task=self.task(encoder), args=self.args,
                                device=self.device, lower_is_better=True, **self.trainer_specific_args)
         trainer.loop()

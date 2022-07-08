@@ -59,5 +59,5 @@ class TFN(nn.Module):
         h_pred = self.mapping(node_features['0'][..., -1])
         x_pred = node_features['1'][:, 0, :]
         data.h_pred = h_pred
-        data.x_pred = x_pred
+        data.x_pred = x_pred + data.x
         return data
