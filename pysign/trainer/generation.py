@@ -1,8 +1,6 @@
 from .basic import Trainer
 import torch
 import numpy as np
-from copy import deepcopy
-from torch_geometric.nn import global_mean_pool
 from pysign.utils.align import kabsch
 
 

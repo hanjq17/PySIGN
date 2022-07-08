@@ -32,14 +32,16 @@ jobs:
           pip install sympy
           pip install pyyaml
           pip install lie-learn
+          pip install pytest
+          pip install pytest-cov
 
       - name: Install atom3d dependencies
         run: |
           pip install atom3d
 
-      - name: Run Equivariance & Invariance Test
+      - name: Run Tests via PyTest
         run: |
-          python examples/equivariance_test.py
+          pytest -s --cov=pysign/ .
 
       - name: Run Nbody System
         run: |

@@ -40,6 +40,7 @@ class RadiusLabel(object):
 
 class PseudoPair(object):
     counter = 0
+
     def __call__(self, data):
         data1, data2 = data, data
         if self.counter % 2 == 0:
@@ -47,7 +48,7 @@ class PseudoPair(object):
         else:
             data1.y = torch.tensor(1).float()
         self.counter += 1
-        return data1, data2    
+        return data1, data2
 
 
 class EnergyForce(object):
@@ -57,7 +58,7 @@ class EnergyForce(object):
         return data
 
 
-def prediction_test(model):
+def _prediction_test(model):
 
     dataset.transform = T.Compose([NBody_Transform, RadiusLabel()])
     datasets = dataset.get_split_by_num(n_train, n_val, n_test)
@@ -72,12 +73,12 @@ def prediction_test(model):
     args.model_save_path = os.path.join(model_save_path, 'prediction', args.model)
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                        decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=False)
+                      decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=False)
     trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
     trainer.loop()
 
 
-def dynamics_test(model, decoding, vector_method):
+def _dynamics_test(model, decoding, vector_method):
 
     if vector_method == 'diff':
         decoding = None
@@ -92,14 +93,14 @@ def dynamics_test(model, decoding, vector_method):
 
     rep_model = get_model_from_args(node_dim=1, edge_attr_dim=1, args=args, dynamics=True)
 
-    args.model_save_path = os.path.join(model_save_path, 'dynamics', '_'.join([args.model,
-                                                                               decoding if decoding is not None else '',
-                                                                               vector_method if vector_method is not None else '']))
+    args.model_save_path = os.path.join(model_save_path,
+                                        'dynamics', '_'.join([args.model,
+                                                              decoding if decoding is not None else '',
+                                                              vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                        decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
+                      decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
 
-    # task = DynamicsPrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder)
     trainer = DynamicsTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True,
                               test=True, save_pred=args.save_pred)
 
@@ -123,7 +124,7 @@ def dynamics_test(model, decoding, vector_method):
         print('Saved to', os.path.join(out_dir, 'eval_result.pkl'))
 
 
-def contrastive_test(model):
+def _contrastive_test(model):
 
     dataset.transform = T.Compose([NBody_Transform, PseudoPair()])
     datasets = dataset.get_split_by_num(n_train, n_val, n_test)
@@ -144,7 +145,7 @@ def contrastive_test(model):
     trainer.loop()
 
 
-def energyforce_test(model, decoding, vector_method):
+def _energyforce_test(model, decoding, vector_method):
 
     dataset.transform = T.Compose([NBody_Transform, EnergyForce()])
 
@@ -157,9 +158,10 @@ def energyforce_test(model, decoding, vector_method):
 
     rep_model = get_model_from_args(node_dim=1, edge_attr_dim=1, args=args, dynamics=True)
 
-    args.model_save_path = os.path.join(model_save_path, 'energyforce', '_'.join([args.model,
-                                                                                  decoding if decoding is not None else '',
-                                                                                  vector_method if vector_method is not None else '']))
+    args.model_save_path = os.path.join(model_save_path,
+                                        'energyforce', '_'.join([args.model,
+                                                                 decoding if decoding is not None else '',
+                                                                 vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, rep_dim=args.hidden_dim, output_dim=1, task_type='Regression',
                       loss='MAE', decoding=decoding, vector_method=vector_method, scalar_pooling='sum',
@@ -169,8 +171,7 @@ def energyforce_test(model, decoding, vector_method):
     trainer.loop()
 
 
-if __name__ == '__main__':
-
+def test_task():
     model_map = {
         'TFN': [('MLP', 'diff')],
         'SE3Transformer': [('MLP', 'diff')],
@@ -186,14 +187,15 @@ if __name__ == '__main__':
 
         if model not in ['RF']:
             print("="*5, f"Prediction Test of {model}", "="*5)
-            prediction_test(model)
+            _prediction_test(model)
             print("="*5, f"Contrastive Test of {model}", "="*5)
-            contrastive_test(model)
+            _contrastive_test(model)
 
         for decoder in model_map[model]:
             print("="*5, f"Dynamics Test of {model} & {decoder}", "="*5)
-            dynamics_test(model, *decoder)
+            _dynamics_test(model, *decoder)
             if model not in ['RF']:
                 print("="*5, f"Energy & Force Test of {model} & {decoder}", "="*5)
-                energyforce_test(model, *decoder)
+                _energyforce_test(model, *decoder)
+
 

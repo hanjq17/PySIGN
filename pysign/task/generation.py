@@ -1,11 +1,9 @@
 from tqdm import tqdm
-
-from torch.nn import Linear, MSELoss, Module, L1Loss
-from torch_geometric.nn import global_add_pool
+import torch
+from torch.nn import MSELoss, L1Loss
 from .basic import BasicTask
-from .utils.output_modules import *
+from pysign.nn.model.general_decoder import GeneralPurposeDecoder
 from ..nn.utils import SinusoidalPosEmb
-from torch.autograd import grad
 import torch.nn as nn
 from torch_scatter import scatter_mean
 
@@ -14,7 +12,7 @@ def linear_beta_schedule(timesteps):
     scale = 5000 / timesteps
     beta_start = scale * 1e-7
     beta_end = scale * 2e-3
-    return torch.linspace(beta_start, beta_end, timesteps, dtype = torch.float32)
+    return torch.linspace(beta_start, beta_end, timesteps, dtype=torch.float32)
 
 
 def extract(a, t, x_shape):
@@ -67,7 +65,8 @@ class ConformationGeneration(BasicTask):
         :return: The decoder module.
         """
         if self.decoder_type == 'DifferentialVector':
-            decoder = DifferentialVector()
+            decoder = GeneralPurposeDecoder(hidden_dim=None, decoding=None, vector_method='diff')
+            # decoder = DifferentialVector()
         else:
             raise NotImplementedError('Unsupported decoder type:', self.decoder_type)
         return decoder

@@ -13,16 +13,18 @@ param_path = 'examples/configs/nbody_test_config.json'
 args = get_default_args()
 args = load_params(args, param_path=param_path)
 set_seed(args.seed)
-
 transform = ToFullyConnected()
+tolerance = 1e-4
 
 
-def equivariance_test(model, decoding, vector_method):
+def _equivariance_test(model, decoding, vector_method):
 
     args.model = model
     rep_model = get_model_from_args(node_dim=5, edge_attr_dim=0, args=args, dynamics=True)
-    task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim if model != 'RF' else 5, task_type='Regression', loss='MAE',
-                    decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
+    task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim if model != 'RF' else 5,
+                      task_type='Regression', loss='MAE',
+                      decoding=decoding, vector_method=vector_method, target='vector',
+                      dynamics=True, return_outputs=True)
     task.eval()
     data_list = []
     data_trans_list = []
@@ -38,26 +40,28 @@ def equivariance_test(model, decoding, vector_method):
         h = torch.rand(N, 5)
         v_label = -v
         data = Data(x=x, v=v, h=h, v_label=v_label)
-        data_trans = Data(x=x @ Q + t, v = v @ Q, h=h, v_label = v_label @ Q)
+        data_trans = Data(x=x @ Q + t, v=v @ Q, h=h, v_label=v_label @ Q)
         data = transform(data)
         data_trans.edge_index = data.edge_index
         data_list.append(data)
         data_trans_list.append(data_trans)
     batch = Batch.from_data_list(data_list)
     batch_trans = Batch.from_data_list(data_trans_list)
-    _,_, outputs = task(batch)
+    _, _, outputs = task(batch)
     output = outputs['vector'][0]
-    _,_, outputs_trans = task(batch_trans)
+    _, _, outputs_trans = task(batch_trans)
     output_trans = outputs_trans['vector'][0]
     dis = torch.sum(torch.abs(output @ Q - output_trans))
-    print('Roto-translation eq error:', dis.item())
+    print('Roto-translation equivariance error:', dis.item())
+    assert dis.item() < tolerance
 
-def invariance_test(model):
+
+def _invariance_test(model):
 
     args.model = model
     rep_model = get_model_from_args(node_dim=5, edge_attr_dim=0, args=args, dynamics=True)
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                        decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=True)
+                      decoding='MLP', vector_method=None, scalar_pooling='sum', target='scalar', return_outputs=True)
     task.eval()
     data_list = []
     data_trans_list = []
@@ -72,22 +76,23 @@ def invariance_test(model):
         h = torch.rand(N, 5)
         y = torch.rand(1)
         data = Data(x=x, v=v, h=h, y=y)
-        data_trans = Data(x=x @ Q + t, v = v @ Q, h=h, y=y)
+        data_trans = Data(x=x @ Q + t, v=v @ Q, h=h, y=y)
         data = transform(data)
         data_trans.edge_index = data.edge_index
         data_list.append(data)
         data_trans_list.append(data_trans)
     batch = Batch.from_data_list(data_list)
     batch_trans = Batch.from_data_list(data_trans_list)
-    _,_, outputs = task(batch)
+    _, _, outputs = task(batch)
     output = outputs['scalar'][0]
-    _,_, outputs_trans = task(batch_trans)
+    _, _, outputs_trans = task(batch_trans)
     output_trans = outputs_trans['scalar'][0]
     dis = torch.sum(torch.abs(output - output_trans))
-    print('Roto-translation eq error:', dis.item())
+    print('Roto-translation invariance error:', dis.item())
+    assert dis.item() < tolerance
 
-if __name__ == '__main__':
 
+def test_equivariance():
     model_map = {
         'TFN': [('MLP', 'diff')],
         'SE3Transformer': [('MLP', 'diff')],
@@ -100,10 +105,9 @@ if __name__ == '__main__':
     }
 
     for model in model_map:
-
         for decoder in model_map[model]:
             print("="*5, f"Equivariance Test of {model} & {decoder}", "="*5)
-            equivariance_test(model, *decoder)
+            _equivariance_test(model, *decoder)
         if model not in ['RF']:
             print("="*5, f"Invariance Test of {model}", "="*5)
-            invariance_test(model)            
+            _invariance_test(model)
