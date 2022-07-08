@@ -42,8 +42,3 @@ jobs:
       - name: Run Tests via PyTest
         run: |
           pytest -s --cov=pysign/ .
-
-      - name: Run Nbody System
-        run: |
-          python examples/nbody_test.py
-
