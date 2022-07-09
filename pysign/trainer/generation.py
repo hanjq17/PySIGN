@@ -5,7 +5,8 @@ from pysign.utils.align import kabsch
 
 
 class ConformationTrainer(Trainer):
-    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True, rollout_step=1, save_pred=False):
+    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True, rollout_step=1,
+                 save_pred=False):
         super(ConformationTrainer, self).__init__(dataloaders, task, args, device, lower_is_better, verbose, test)
         self.rollout_step = rollout_step
         self.save_pred = save_pred

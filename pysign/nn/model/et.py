@@ -48,21 +48,21 @@ class EquivariantTransformer(nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_channels=128,
-        num_layers=6,
-        num_rbf=50,
-        rbf_type="expnorm",
-        trainable_rbf=True,
-        activation="silu",
-        attn_activation="silu",
-        neighbor_embedding=True,
-        num_heads=8,
-        distance_influence="both",
-        cutoff_lower=0.0,
-        cutoff_upper=5.0,
-        max_z=100,
-        max_num_neighbors=32,
+            self,
+            hidden_channels=128,
+            num_layers=6,
+            num_rbf=50,
+            rbf_type="expnorm",
+            trainable_rbf=True,
+            activation="silu",
+            attn_activation="silu",
+            neighbor_embedding=True,
+            num_heads=8,
+            distance_influence="both",
+            cutoff_lower=0.0,
+            cutoff_upper=5.0,
+            max_z=100,
+            max_num_neighbors=32,
     ):
         super(EquivariantTransformer, self).__init__()
 
@@ -157,9 +157,9 @@ class EquivariantTransformer(nn.Module):
         edge_vec = pos[edge_index[0]] - pos[edge_index[1]]
 
         edge_weight = torch.norm(edge_vec, dim=-1)
-        
+
         edge_attr = self.cutoff_fn(edge_weight.unsqueeze(-1)) * self.distance_expansion(edge_weight)
-        
+
         edge_vec = edge_vec / edge_weight.unsqueeze(1)
 
         if self.neighbor_embedding is not None:
@@ -167,7 +167,7 @@ class EquivariantTransformer(nn.Module):
 
         # TODO: need discussions here
         if hasattr(data, 'v'):
-            vec = data.v.unsqueeze(-1).repeat(1,1,x.size(1))
+            vec = data.v.unsqueeze(-1).repeat(1, 1, x.size(1))
         else:
             vec = torch.zeros(x.size(0), 3, x.size(1), device=x.device)
 
@@ -199,5 +199,3 @@ class EquivariantTransformer(nn.Module):
             f"cutoff_lower={self.cutoff_lower}, "
             f"cutoff_upper={self.cutoff_upper})"
         )
-
-

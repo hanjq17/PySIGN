@@ -23,10 +23,11 @@ class SchNet(nn.Module):
     :params max_num_neighbors (int, optional): The maximum number of neighbors to collect for each
         node within the 'cutoff' distance. (default 32)
     """
-    def __init__(self, in_node_nf: int, out_node_nf: int, hidden_nf: int=128, num_filters: int=128,
-                 num_interactions: int=6, num_gaussians: int=50, cutoff: float=10.0, max_num_neighbors: int=32):
+
+    def __init__(self, in_node_nf: int, out_node_nf: int, hidden_nf: int = 128, num_filters: int = 128,
+                 num_interactions: int = 6, num_gaussians: int = 50, cutoff: float = 10.0, max_num_neighbors: int = 32):
         super().__init__()
-        
+
         self.in_node_nf = in_node_nf
         self.out_node_nf = out_node_nf
         self.hidden_nf = hidden_nf
@@ -48,7 +49,6 @@ class SchNet(nn.Module):
             ShiftedSoftplus(),
             nn.Linear(hidden_nf // 2, out_node_nf)
         )
-        
 
     @property
     def params(self):
@@ -58,7 +58,7 @@ class SchNet(nn.Module):
         :return: The parameters to optimize.
         """
         return self.parameters()
-    
+
     def forward(self, data):
         h, pos, batch = data.h, data.x, data.batch
         h = self.embedding_in(h)
@@ -122,7 +122,7 @@ class GaussianSmearing(torch.nn.Module):
     def __init__(self, start=0.0, stop=5.0, num_gaussians=50):
         super().__init__()
         offset = torch.linspace(start, stop, num_gaussians)
-        self.coeff = -0.5 / (offset[1] - offset[0]).item()**2
+        self.coeff = -0.5 / (offset[1] - offset[0]).item() ** 2
         self.register_buffer('offset', offset)
 
     def forward(self, dist):

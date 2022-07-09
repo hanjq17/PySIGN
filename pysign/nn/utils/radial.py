@@ -3,7 +3,7 @@ from math import pi
 import torch
 import torch.nn as nn
 
-__all__ = ['rbf_class_mapping', 'GaussianRBF','ExpNormalRBF', 'BesselRBF']
+__all__ = ['rbf_class_mapping', 'GaussianRBF', 'ExpNormalRBF', 'BesselRBF']
 
 
 class GaussianRBF(nn.Module):
@@ -27,6 +27,7 @@ class GaussianRBF(nn.Module):
     :param num_rbf: Number of radial basis functions :math:`N`.
     :param trainable: Whether the RBF parameters, i.e. offset and coeff, are trainable.
     """
+
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=False):
         super(GaussianRBF, self).__init__()
         self.cutoff_lower = cutoff_lower
@@ -85,6 +86,7 @@ class ExpNormalRBF(nn.Module):
     :param num_rbf: Number of radial basis functions :math:`N`.
     :param trainable: Whether the RBF parameters, i.e. :math:`\mu` and :math:`\beta`, are trainable.
     """
+
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0, num_rbf=50, trainable=True):
         super(ExpNormalRBF, self).__init__()
         self.cutoff_lower = cutoff_lower

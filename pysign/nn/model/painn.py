@@ -20,20 +20,20 @@ class PaiNN(nn.Module):
     """
 
     def __init__(
-        self,
-        n_atom_basis: int,
-        n_interactions: int,
-        radial_basis: nn.Module = None,
-        rbf_type: str = "gaussian",
-        num_rbf: int = 50,
-        trainable_rbf: float = False,
-        cutoff_lower: float = 0.0,
-        cutoff_upper: float = 5.0,
-        activation: nn.Module = nn.SiLU(),
-        max_z: int = 100,
-        shared_interactions: bool = False,
-        shared_filters: bool = False,
-        epsilon: float = 1e-8,
+            self,
+            n_atom_basis: int,
+            n_interactions: int,
+            radial_basis: nn.Module = None,
+            rbf_type: str = "gaussian",
+            num_rbf: int = 50,
+            trainable_rbf: float = False,
+            cutoff_lower: float = 0.0,
+            cutoff_upper: float = 5.0,
+            activation: nn.Module = nn.SiLU(),
+            max_z: int = 100,
+            shared_interactions: bool = False,
+            shared_filters: bool = False,
+            epsilon: float = 1e-8,
     ):
         """
         Args:
@@ -52,10 +52,11 @@ class PaiNN(nn.Module):
 
         self.n_atom_basis = n_atom_basis
         self.n_interactions = n_interactions
-        
+
         self.radial_basis = radial_basis or \
-            rbf_class_mapping[rbf_type](cutoff_lower = cutoff_lower, cutoff_upper = cutoff_upper, num_rbf = num_rbf, trainable = trainable_rbf)
-        
+                            rbf_class_mapping[rbf_type](cutoff_lower=cutoff_lower, cutoff_upper=cutoff_upper,
+                                                        num_rbf=num_rbf, trainable=trainable_rbf)
+
         self.cutoff_fn = CosineCutoff(cutoff_lower, cutoff_upper)
 
         self.embedding = nn.Linear(max_z, n_atom_basis)
@@ -131,7 +132,7 @@ class PaiNN(nn.Module):
         qs = q.shape
 
         if hasattr(data, 'v'):
-            mu = data.v.unsqueeze(-1).repeat(1,1,qs[2])
+            mu = data.v.unsqueeze(-1).repeat(1, 1, qs[2])
         else:
             mu = torch.zeros((qs[0], 3, qs[2]), device=q.device)
 

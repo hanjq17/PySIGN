@@ -24,6 +24,7 @@ class EGNN(nn.Module):
         It bounds the output of :math:`\phi_x(m_{ij})` which improves in stability but it may decrease in accuracy.
     :param use_vel: Whether using velocities as inputs in dynamic simulation.
     """
+
     def __init__(self, in_node_nf, hidden_nf, out_node_nf, in_edge_nf=0, act_fn=nn.SiLU(),
                  n_layers=4, residual=True, attention=False, normalize=False, tanh=False, use_vel=False):
         super(EGNN, self).__init__()
@@ -32,9 +33,10 @@ class EGNN(nn.Module):
         self.embedding_in = nn.Linear(in_node_nf, self.hidden_nf)
         self.embedding_out = nn.Linear(self.hidden_nf, out_node_nf)
         for i in range(n_layers):
-            self.add_module("gcl_%d" % i, EGNNLayer(self.hidden_nf, self.hidden_nf, self.hidden_nf, edges_in_d=in_edge_nf,
-                                                    act_fn=act_fn, residual=residual, attention=attention, use_vel=use_vel,
-                                                    normalize=normalize, tanh=tanh))
+            self.add_module("gcl_%d" % i,
+                            EGNNLayer(self.hidden_nf, self.hidden_nf, self.hidden_nf, edges_in_d=in_edge_nf,
+                                      act_fn=act_fn, residual=residual, attention=attention, use_vel=use_vel,
+                                      normalize=normalize, tanh=tanh))
 
     @property
     def params(self):

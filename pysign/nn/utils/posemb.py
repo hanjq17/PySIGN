@@ -4,6 +4,7 @@ from torch import nn
 
 __all__ = ['SinusoidalPosEmb']
 
+
 class SinusoidalPosEmb(nn.Module):
     r"""
     Sinusoidal postional embedding layer
@@ -14,7 +15,6 @@ class SinusoidalPosEmb(nn.Module):
     
     :param dim: Size of the embedding vector
     """
-
 
     def __init__(self, dim):
         super().__init__()

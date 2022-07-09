@@ -25,14 +25,14 @@ class PaiNNInteraction(nn.Module):
         )
 
     def forward(
-        self,
-        q: torch.Tensor,
-        mu: torch.Tensor,
-        Wij: torch.Tensor,
-        dir_ij: torch.Tensor,
-        idx_i: torch.Tensor,
-        idx_j: torch.Tensor,
-        n_atoms: int,
+            self,
+            q: torch.Tensor,
+            mu: torch.Tensor,
+            Wij: torch.Tensor,
+            dir_ij: torch.Tensor,
+            idx_i: torch.Tensor,
+            idx_j: torch.Tensor,
+            n_atoms: int,
     ):
         """Compute interaction output.
 
@@ -115,7 +115,7 @@ class PaiNNMixing(nn.Module):
 
 
 def replicate_module(
-    module_factory: Callable[[], nn.Module], n: int, share_params: bool
+        module_factory: Callable[[], nn.Module], n: int, share_params: bool
 ):
     if share_params:
         module_list = nn.ModuleList([module_factory()] * n)

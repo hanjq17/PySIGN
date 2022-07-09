@@ -7,6 +7,7 @@ from ..registry import EncoderRegistry
 @EncoderRegistry.register_encoder('TFN')
 class TFN(nn.Module):
     """SE(3) equivariant GCN"""
+
     def __init__(self, num_layers: int, atom_feature_size: int,
                  num_channels: int, num_nlayers: int = 1, num_degrees: int = 4,
                  edge_dim: int = 4, use_vel: bool = False, **kwargs):
@@ -30,7 +31,7 @@ class TFN(nn.Module):
 
         blocks = []
         fin = fibers['in']
-        for i in range(self.num_layers-1):
+        for i in range(self.num_layers - 1):
             blocks.append(GConvSE3(fin, fibers['mid'], self_interaction=True, edge_dim=self.edge_dim))
             # blocks.append(GNormSE3(fibers['mid'], num_layers=self.num_nlayers))
             blocks.append(GNormBias(fibers['mid']))  # TODO: check
@@ -45,7 +46,7 @@ class TFN(nn.Module):
         edge_attr = data.edge_attr
         # Compute equivariant weight basis from relative positions
         dis = data.x[edge_index[0]] - data.x[edge_index[1]]  # TODO: check
-        basis, r = get_basis_and_r(dis, self.num_degrees-1)
+        basis, r = get_basis_and_r(dis, self.num_degrees - 1)
 
         if self.use_vel:
             assert hasattr(data, 'v')

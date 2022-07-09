@@ -7,7 +7,6 @@ import pickle as pkl
 from joblib import Parallel, delayed
 from .registry import DatasetRegistry
 
-
 __all__ = ['NBody']
 
 
@@ -89,7 +88,8 @@ class NBody(InMemoryDataset):
         :return:
         """
         results = Parallel(n_jobs=self.num_workers)(
-            delayed(para_comp)(self.n_particle, self.box_size, self.T, self.sample_freq) for i in tqdm(range(self.num_samples))
+            delayed(para_comp)(self.n_particle, self.box_size, self.T, self.sample_freq) for i in
+            tqdm(range(self.num_samples))
         )
         loc_all, vel_all, charges_all = zip(*results)  # TODO: Do we really need to save the edges?
         with open(self.raw_paths[0], 'wb') as f:

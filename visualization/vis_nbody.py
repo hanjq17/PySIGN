@@ -65,5 +65,3 @@ f = "animation_" + str(idx) + ".gif"
 writergif = animation.PillowWriter(fps=10)
 anim.save(f, writer=writergif)
 print('write gif to', f)
-
-

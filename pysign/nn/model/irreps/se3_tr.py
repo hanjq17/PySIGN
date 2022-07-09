@@ -7,6 +7,7 @@ from ..registry import EncoderRegistry
 @EncoderRegistry.register_encoder('SE3Transformer')
 class SE3Transformer(nn.Module):
     """SE(3) equivariant GCN with attention"""
+
     def __init__(self, num_layers: int, atom_feature_size: int,
                  num_channels: int, num_nlayers: int = 1, num_degrees: int = 4,
                  edge_dim: int = 4, div: float = 4, pooling: str = 'avg',
@@ -54,7 +55,7 @@ class SE3Transformer(nn.Module):
         edge_attr = data.edge_attr
         # Compute equivariant weight basis from relative positions
         dis = data.x[edge_index[0]] - data.x[edge_index[1]]
-        basis, r = get_basis_and_r(dis, self.num_degrees-1)
+        basis, r = get_basis_and_r(dis, self.num_degrees - 1)
 
         if self.use_vel:
             assert hasattr(data, 'v')

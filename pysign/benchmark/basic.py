@@ -69,4 +69,3 @@ class Benchmark(object):
             with open(os.path.join(self.args.eval_result_path, 'eval_result.pkl'), 'wb') as f:
                 pickle.dump((all_loss, all_pred), f)
             print('Saved to', os.path.join(self.args.eval_result_path, 'eval_result.pkl'))
-

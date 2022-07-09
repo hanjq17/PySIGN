@@ -44,4 +44,3 @@ def load_params(args, param_path):
     for k, v in params.items():
         setattr(args, k, v)
     return args
-

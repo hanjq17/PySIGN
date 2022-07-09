@@ -89,5 +89,3 @@ class QM9(QM9_pyg):
         n_train = 100000
         n_val = n_tot - n_train - n_test
         return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)
-
-

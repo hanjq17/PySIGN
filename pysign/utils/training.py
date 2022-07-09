@@ -121,4 +121,3 @@ class EarlyStopping(object):
                 print('Early Stopping with patience', self.max_times, 'epochs, exit!')
                 return 'exit'
         return better
-

@@ -165,7 +165,3 @@ class Trainer(object):
                 print()
 
         print('Finished!')
-
-
-
-

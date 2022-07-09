@@ -2,7 +2,6 @@ import numpy as np
 
 __all__ = ['Stick', 'Hinge', 'Isolated']
 
-
 eps = 1e-6
 
 
@@ -230,7 +229,7 @@ class Hinge(PhysicalObject):
         return X, V
 
     def check(self, X, V):
-        x, v  = X[self.node_idx], V[self.node_idx]
+        x, v = X[self.node_idx], V[self.node_idx]
         x0, x1, x2 = x[0], x[1], x[2]
         v0, v1, v2 = v[0], v[1], v[2]
         d1 = x1 - x0

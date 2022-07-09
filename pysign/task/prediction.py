@@ -12,6 +12,7 @@ class Prediction(BasicTask):
     :param output_dim: the output dimension for computing loss.
     :param rep_dim: the dimension of the representation.
     """
+
     def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE',
                  decoding='MLP', vector_method=None, normalize=None, scalar_pooling='sum', target='scalar',
                  loss_weight=None, return_outputs=False, dynamics=False):
@@ -131,4 +132,3 @@ class Prediction(BasicTask):
             all_loss['loss_' + target] = loss
 
         return tot_loss, all_loss, outputs
-

@@ -1,5 +1,6 @@
 import torch
 
+
 def unsorted_segment_sum(data, segment_ids, num_segments):
     result_shape = (num_segments, data.size(1))
     result = data.new_full(result_shape, 0)  # Init empty result tensor.

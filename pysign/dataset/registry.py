@@ -2,7 +2,6 @@ from ..utils import RegistryBase
 import typing as _typing
 from torch_geometric.data.dataset import Dataset
 
-
 __all__ = ['DatasetRegistry']
 
 

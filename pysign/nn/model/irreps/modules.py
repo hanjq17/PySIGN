@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .utils import utils_steerable
-from.fibers import Fiber, fiber2head
+from .fibers import Fiber, fiber2head
 from torch_geometric.utils import softmax
 from torch_scatter import scatter
 
@@ -112,14 +112,14 @@ def get_basis(dis, max_degree, compute_gradients):
         # Relative positional encodings (vector)
         r_ij = utils_steerable.get_spherical_from_cartesian_torch(cloned_d)
         # Spherical harmonic basis
-        Y = utils_steerable.precompute_sh(r_ij, 2*max_degree)
+        Y = utils_steerable.precompute_sh(r_ij, 2 * max_degree)
         device = Y[0].device
 
         basis = {}
-        for d_in in range(max_degree+1):
-            for d_out in range(max_degree+1):
+        for d_in in range(max_degree + 1):
+            for d_out in range(max_degree + 1):
                 K_Js = []
-                for J in range(abs(d_in-d_out), d_in+d_out+1):
+                for J in range(abs(d_in - d_out), d_in + d_out + 1):
                     # Get spherical harmonic projection matrices
                     Q_J = utils_steerable._basis_transformation_Q_J(J, d_in, d_out)
                     Q_J = Q_J.float().T.to(device)
@@ -129,7 +129,7 @@ def get_basis(dis, max_degree, compute_gradients):
                     K_Js.append(K_J)
 
                 # Reshape so can take linear combinations with a dot product
-                size = (-1, 1, 2*d_out+1, 1, 2*d_in+1, 2*min(d_in, d_out)+1)
+                size = (-1, 1, 2 * d_out + 1, 1, 2 * d_in + 1, 2 * min(d_in, d_out) + 1)
                 basis[f'{d_in},{d_out}'] = torch.stack(K_Js, -1).view(*size)
         return basis
 
@@ -164,7 +164,8 @@ def get_basis_and_r(dis, max_degree, compute_gradients=False):
 
 class RadialFunc(nn.Module):
     """NN parameterized radial profile function."""
-    def __init__(self, num_freq, in_dim, out_dim, edge_dim: int=0):
+
+    def __init__(self, num_freq, in_dim, out_dim, edge_dim: int = 0):
         """NN parameterized radial profile function.
 
         Args:
@@ -180,13 +181,13 @@ class RadialFunc(nn.Module):
         self.out_dim = out_dim
         self.edge_dim = edge_dim
 
-        self.net = nn.Sequential(nn.Linear(self.edge_dim+1,self.mid_dim),
+        self.net = nn.Sequential(nn.Linear(self.edge_dim + 1, self.mid_dim),
                                  BN(self.mid_dim),
                                  nn.ReLU(),
-                                 nn.Linear(self.mid_dim,self.mid_dim),
+                                 nn.Linear(self.mid_dim, self.mid_dim),
                                  BN(self.mid_dim),
                                  nn.ReLU(),
-                                 nn.Linear(self.mid_dim,self.num_freq*in_dim*out_dim))
+                                 nn.Linear(self.mid_dim, self.num_freq * in_dim * out_dim))
 
         nn.init.kaiming_uniform_(self.net[0].weight)
         nn.init.kaiming_uniform_(self.net[3].weight)
@@ -202,8 +203,9 @@ class RadialFunc(nn.Module):
 
 class PairwiseConv(nn.Module):
     """SE(3)-equivariant convolution between two single-type features"""
+
     def __init__(self, degree_in: int, nc_in: int, degree_out: int,
-                 nc_out: int, edge_dim: int=0):
+                 nc_out: int, edge_dim: int = 0):
         """SE(3)-equivariant convolution between a pair of feature types.
 
         This layer performs a convolution from nc_in features of type degree_in
@@ -224,8 +226,8 @@ class PairwiseConv(nn.Module):
         self.nc_out = nc_out
 
         # Functions of the degree
-        self.num_freq = 2*min(degree_in, degree_out) + 1
-        self.d_out = 2*degree_out + 1
+        self.num_freq = 2 * min(degree_in, degree_out) + 1
+        self.d_out = 2 * degree_out + 1
         self.edge_dim = edge_dim
 
         # Radial profile function
@@ -235,7 +237,7 @@ class PairwiseConv(nn.Module):
         # Get radial weights
         R = self.rp(feat)
         kernel = torch.sum(R * basis[f'{self.degree_in},{self.degree_out}'], -1)
-        return kernel.view(kernel.shape[0], self.d_out*self.nc_out, -1)
+        return kernel.view(kernel.shape[0], self.d_out * self.nc_out, -1)
 
 
 class G1x1SE3(nn.Module):
@@ -243,6 +245,7 @@ class G1x1SE3(nn.Module):
 
     This is equivalent to a self-interaction layer in TensorField Networks.
     """
+
     def __init__(self, f_in, f_out, learnable=True):
         """SE(3)-equivariant 1x1 convolution.
 
@@ -331,7 +334,7 @@ class GAttentiveSelfInt(nn.Module):
         self.f_out = f_out
         self.nonlin = nn.LeakyReLU()
         self.num_layers = 2
-        self.eps = 1e-12 # regularisation for phase: gradients explode otherwise
+        self.eps = 1e-12  # regularisation for phase: gradients explode otherwise
 
         # one network for attention weights per degree
         self.transform = nn.ModuleDict()
@@ -361,28 +364,27 @@ class GAttentiveSelfInt(nn.Module):
         for k, v in node_features.items():
             # v shape: [..., m, 2*k+1]
             first_dims = v.shape[:-2]
-            m_in  = self.f_in.structure_dict[int(k)]
+            m_in = self.f_in.structure_dict[int(k)]
             m_out = self.f_out.structure_dict[int(k)]
             assert v.shape[-2] == m_in
             assert v.shape[-1] == 2 * int(k) + 1
 
             # Compute the norms and normalized features
-            scalars = torch.einsum('...ac,...bc->...ab', [v, v]) # [..., m_in, m_in]
-            scalars = scalars.view(*first_dims, m_in*m_in) # [..., m_in*m_in]
+            scalars = torch.einsum('...ac,...bc->...ab', [v, v])  # [..., m_in, m_in]
+            scalars = scalars.view(*first_dims, m_in * m_in)  # [..., m_in*m_in]
             sign = scalars.sign()
             scalars = scalars.abs_().clamp_min(self.eps)
             scalars *= sign
 
             # perform attention
-            att_weights = self.transform[str(k)](scalars) # [..., m_out*m_in]
-            att_weights = att_weights.view(*first_dims, m_out, m_in) # [..., m_out, m_in]
+            att_weights = self.transform[str(k)](scalars)  # [..., m_out*m_in]
+            att_weights = att_weights.view(*first_dims, m_out, m_in)  # [..., m_out, m_in]
             att_weights = F.softmax(input=att_weights, dim=-1)
             # shape [..., m_out, 2*k+1]
             # output[k] = torch.einsum('...nm,...md->...nd', [att_weights, phase])
             output[k] = torch.einsum('...nm,...md->...nd', [att_weights, v])
 
         return output
-
 
 
 class GNormSE3(nn.Module):
@@ -398,7 +400,8 @@ class GNormSE3(nn.Module):
 
     where fnc: {R+}^m -> R^m is a learnable map from m norms to m scalars.
     """
-    def __init__(self, fiber, nonlin=nn.ReLU(inplace=True), num_layers: int=0):
+
+    def __init__(self, fiber, nonlin=nn.ReLU(inplace=True), num_layers: int = 0):
         """Initializer.
 
         Args:
@@ -420,7 +423,7 @@ class GNormSE3(nn.Module):
             self.transform[str(d)] = self._build_net(int(m))
 
     def __repr__(self):
-         return f"GNormSE3(num_layers={self.num_layers}, nonlin={self.nonlin})"
+        return f"GNormSE3(num_layers={self.num_layers}, nonlin={self.nonlin})"
 
     def _build_net(self, m: int):
         net = []
@@ -451,6 +454,7 @@ class GNormSE3(nn.Module):
 
 class BN(nn.Module):
     """SE(3)-equvariant batch/layer normalization"""
+
     def __init__(self, m):
         """SE(3)-equvariant batch/layer normalization
 
@@ -465,7 +469,7 @@ class BN(nn.Module):
 
 
 class GConvSE3Partial(nn.Module):
-    def __init__(self, f_in, f_out, edge_dim: int=0, x_ij=None):
+    def __init__(self, f_in, f_out, edge_dim: int = 0, x_ij=None):
         """SE(3)-equivariant partial convolution.
 
         A partial convolution computes the inner product between a kernel and
@@ -487,7 +491,7 @@ class GConvSE3Partial(nn.Module):
         assert x_ij in [None, 'cat', 'add']
         self.x_ij = x_ij
         if x_ij == 'cat':
-            self.f_in = Fiber.combine(f_in, Fiber(structure=[(1,1)]))
+            self.f_in = Fiber.combine(f_in, Fiber(structure=[(1, 1)]))
         else:
             self.f_in = f_in
 
@@ -520,19 +524,20 @@ class GConvSE3Partial(nn.Module):
                         src = rel
                     else:
                         # features of src node, shape [edges, m_in*(2l+1), 1]
-                        src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_ori * (2 * d_in + 1), 1)  # TODO: need check
+                        src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_ori * (2 * d_in + 1),
+                                                                           1)  # TODO: need check
                         # add to feature vector
                         src = torch.cat([src, rel], dim=1)
                 elif self.x_ij == 'add' and d_in == 1 and m_in > 1:
-                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)  # TODO: need check
+                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in * (2 * d_in + 1), 1)  # TODO: need check
                     rel = (x[edge_index[1]] - x[edge_index[0]]).view(-1, 3, 1)  # TODO: need check
                     src[..., :3, :1] = src[..., :3, :1] + rel
                 else:
-                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in*(2*d_in+1), 1)  # TODO: need check
+                    src = node_features[f'{d_in}'][edge_index[0]].view(-1, m_in * (2 * d_in + 1), 1)  # TODO: need check
                 edge = edata[f'({d_in},{d_out})']
                 msg = msg + torch.matmul(edge, src)
             msg = msg.view(msg.shape[0], -1, 2 * d_out + 1)
-            ret_e[f'{d_out}'] = msg.view(msg.shape[0], -1, 2*d_out+1)
+            ret_e[f'{d_out}'] = msg.view(msg.shape[0], -1, 2 * d_out + 1)
         return ret_e
 
 
@@ -571,15 +576,16 @@ class GMABSE3(nn.Module):
         for m, d in self.f_value.structure:
             msg = edge_a.unsqueeze(-1).unsqueeze(-1) * edata[f'v{d}']
             out = scatter(msg, edge_index[1], dim=0, reduce='sum')  # TODO: need check
-            ret[f'{d}'] = out.view(-1, m, 2*d+1)
+            ret[f'{d}'] = out.view(-1, m, 2 * d + 1)
 
         return ret
 
 
 class GSE3Res(nn.Module):
     """Graph attention block with SE(3)-equivariance and skip connection"""
-    def __init__(self, f_in: Fiber, f_out: Fiber, edge_dim: int=0, div: float=4,
-                 n_heads: int=1, learnable_skip=True, skip='cat', selfint='1x1', x_ij=None):
+
+    def __init__(self, f_in: Fiber, f_out: Fiber, edge_dim: int = 0, div: float = 4,
+                 n_heads: int = 1, learnable_skip=True, skip='cat', selfint='1x1', x_ij=None):
         super().__init__()
         self.f_in = f_in
         self.f_out = f_out
@@ -648,6 +654,7 @@ class GSE3Res(nn.Module):
 
 class GSum(nn.Module):
     """SE(3)-equvariant graph residual sum function."""
+
     def __init__(self, f_x: Fiber, f_y: Fiber):
         """SE(3)-equvariant graph residual sum function.
 
@@ -687,6 +694,7 @@ class GSum(nn.Module):
 
 class GCat(nn.Module):
     """Concat only degrees which are in f_x"""
+
     def __init__(self, f_x: Fiber, f_y: Fiber):
         super().__init__()
         self.f_x = f_x
