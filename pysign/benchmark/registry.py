@@ -2,7 +2,6 @@ from ..utils import RegistryBase
 import typing as _typing
 from .basic import Benchmark
 
-
 __all__ = ['BenchmarkRegistry']
 
 

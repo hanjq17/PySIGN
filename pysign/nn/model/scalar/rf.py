@@ -19,7 +19,8 @@ class RadialField(nn.Module):
         self.hidden_nf = hidden_nf
         self.n_layers = n_layers
         for i in range(n_layers):
-            self.add_module("gcl_%d" % i, RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
+            self.add_module("gcl_%d" % i,
+                            RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
 
     @property
     def params(self):

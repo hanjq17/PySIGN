@@ -20,6 +20,7 @@ class CosineCutoff(nn.Module):
     :param cutoff_lower: Lower bound :math:`L` of the cutoff interval. If cutoff_lower < 0, it will be set to 0.
     :param cutoff_upper: Upper bound :math:`U` of the cutoff interval.
     """
+
     def __init__(self, cutoff_lower=0.0, cutoff_upper=5.0):
         super(CosineCutoff, self).__init__()
         self.cutoff_lower = cutoff_lower
@@ -33,16 +34,16 @@ class CosineCutoff(nn.Module):
         """
         if self.cutoff_lower > 0:
             cutoffs = 0.5 * (
-                torch.cos(
-                    math.pi
-                    * (
-                        2
-                        * (distances - self.cutoff_lower)
-                        / (self.cutoff_upper - self.cutoff_lower)
-                        + 1.0
+                    torch.cos(
+                        math.pi
+                        * (
+                                2
+                                * (distances - self.cutoff_lower)
+                                / (self.cutoff_upper - self.cutoff_lower)
+                                + 1.0
+                        )
                     )
-                )
-                + 1.0
+                    + 1.0
             )
             # remove contributions below the cutoff radius
             cutoffs = cutoffs * (distances < self.cutoff_upper).float()

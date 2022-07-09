@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('./')
 from pysign.nn.model import get_model_from_args
 from pysign.task import Prediction
@@ -18,7 +19,6 @@ tolerance = 1e-4
 
 
 def _equivariance_test(model, decoding, vector_method):
-
     args.model = model
     rep_model = get_model_from_args(node_dim=5, edge_attr_dim=0, args=args, dynamics=True)
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim if model != 'RF' else 5,
@@ -57,7 +57,6 @@ def _equivariance_test(model, decoding, vector_method):
 
 
 def _invariance_test(model):
-
     args.model = model
     rep_model = get_model_from_args(node_dim=5, edge_attr_dim=0, args=args, dynamics=True)
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
@@ -106,8 +105,8 @@ def test_equivariance():
 
     for model in model_map:
         for decoder in model_map[model]:
-            print("="*5, f"Equivariance Test of {model} & {decoder}", "="*5)
+            print("=" * 5, f"Equivariance Test of {model} & {decoder}", "=" * 5)
             _equivariance_test(model, *decoder)
         if model not in ['RF']:
-            print("="*5, f"Invariance Test of {model}", "="*5)
+            print("=" * 5, f"Invariance Test of {model}", "=" * 5)
             _invariance_test(model)

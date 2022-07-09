@@ -34,6 +34,7 @@ class ConformationGeneration(BasicTask):
     :param rep: the representation module.
     :param rep_dim: the dimension of the representation.
     """
+
     def __init__(self, rep, rep_dim, num_steps=1000, decoder_type='DifferentialVector', loss='MAE'):
         super(ConformationGeneration, self).__init__(rep)
         self.rep_dim = rep_dim
@@ -140,7 +141,8 @@ class ConformationGeneration(BasicTask):
                 t_emb = self.time_mlp(t)
                 data.h = torch.cat([h, t_emb], dim=1)
                 eps = self.decoder(self.rep(data))
-                mean = (1. / torch.sqrt(1 - self.betas[i])) * (x - self.betas[i] / self.sqrt_one_minus_alphas_cumprod[i] * eps)
+                mean = (1. / torch.sqrt(1 - self.betas[i])) * (
+                            x - self.betas[i] / self.sqrt_one_minus_alphas_cumprod[i] * eps)
                 noise = torch.randn_like(x)
                 sigma = torch.sqrt(self.betas[i])
                 x = mean + sigma * noise

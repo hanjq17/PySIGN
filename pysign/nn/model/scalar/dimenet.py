@@ -50,14 +50,15 @@ class DimeNet(nn.Module):
     :params num_output_layers (int, optional): Number of linear layers for the output blocks (default 3)
     :params act (Callable, optional): The activation function (default swish)
     """
-    def __init__(self, in_node_nf: int, out_node_nf: int, hidden_nf: int=128,
-                 num_blocks: int=6, num_bilinear: int=8, num_spherical: int=7,
-                 num_radial: int=6, cutoff: float=5.0, max_num_neighbors: int=32,
-                 envelope_exponent: int=5, num_before_skip: int=1,
-                 num_after_skip: int=2, num_output_layers: int=3,
-                 act: Callable=swish):
+
+    def __init__(self, in_node_nf: int, out_node_nf: int, hidden_nf: int = 128,
+                 num_blocks: int = 6, num_bilinear: int = 8, num_spherical: int = 7,
+                 num_radial: int = 6, cutoff: float = 5.0, max_num_neighbors: int = 32,
+                 envelope_exponent: int = 5, num_before_skip: int = 1,
+                 num_after_skip: int = 2, num_output_layers: int = 3,
+                 act: Callable = swish):
         super().__init__()
-        
+
         self.in_node_nf = in_node_nf
         self.hidden_nf = hidden_nf
         self.cutoff = cutoff
@@ -79,7 +80,7 @@ class DimeNet(nn.Module):
         for _ in range(num_blocks + 1):
             self.output_blocks.append(
                 OutputBlock(num_radial, hidden_nf, out_node_nf,
-                num_output_layers, act)
+                            num_output_layers, act)
             )
 
         self.reset_parameters()
@@ -92,7 +93,7 @@ class DimeNet(nn.Module):
         :return: The parameters to optimize.
         """
         return self.parameters()
-    
+
     def reset_parameters(self):
         self.rbf.reset_parameters()
         for out in self.output_blocks:
@@ -140,7 +141,7 @@ class DimeNet(nn.Module):
         row, col = edge_index  # j->i
 
         value = torch.arange(row.size(0), device=row.device)
-        
+
         adj_t = SparseTensor(row=col, col=row, value=value,
                              sparse_sizes=(num_nodes, num_nodes))
         adj_t_row = adj_t[row]
@@ -353,7 +354,7 @@ class InteractionBlock(torch.nn.Module):
         x_ji = self.act(self.lin_ji(x))
         x_kj = self.act(self.lin_kj(x))
         x_kj = x_kj * rbf
-        
+
         if sbf.shape[0] == 0:
             h = x_ji
         else:

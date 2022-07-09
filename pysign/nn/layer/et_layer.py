@@ -65,15 +65,15 @@ class NeighborEmbedding(MessagePassing):
 
 class EquivariantMultiHeadAttention(MessagePassing):
     def __init__(
-        self,
-        hidden_channels,
-        num_rbf,
-        distance_influence,
-        num_heads,
-        activation,
-        attn_activation,
-        cutoff_lower,
-        cutoff_upper,
+            self,
+            hidden_channels,
+            num_rbf,
+            distance_influence,
+            num_heads,
+            activation,
+            attn_activation,
+            cutoff_lower,
+            cutoff_upper,
     ):
         super(EquivariantMultiHeadAttention, self).__init__(aggr="add", node_dim=0)
         assert hidden_channels % num_heads == 0, (
@@ -194,11 +194,11 @@ class EquivariantMultiHeadAttention(MessagePassing):
         return x, vec
 
     def aggregate(
-        self,
-        features: Tuple[torch.Tensor, torch.Tensor],
-        index: torch.Tensor,
-        ptr: Optional[torch.Tensor],
-        dim_size: Optional[int],
+            self,
+            features: Tuple[torch.Tensor, torch.Tensor],
+            index: torch.Tensor,
+            ptr: Optional[torch.Tensor],
+            dim_size: Optional[int],
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         x, vec = features
         x = scatter(x, index, dim=self.node_dim, dim_size=dim_size)
@@ -206,6 +206,6 @@ class EquivariantMultiHeadAttention(MessagePassing):
         return x, vec
 
     def update(
-        self, inputs: Tuple[torch.Tensor, torch.Tensor]
+            self, inputs: Tuple[torch.Tensor, torch.Tensor]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         return inputs

@@ -3,7 +3,6 @@ import torch
 from torch import nn
 from torch.autograd import grad
 
-
 __all__ = ['GeneralPurposeDecoder']
 
 act_class_mapping = {
@@ -19,12 +18,12 @@ class GatedEquivariantBlock(nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_channels,
-        out_channels,
-        intermediate_channels=None,
-        activation="silu",
-        scalar_activation=False,
+            self,
+            hidden_channels,
+            out_channels,
+            intermediate_channels=None,
+            activation="silu",
+            scalar_activation=False,
     ):
         super(GatedEquivariantBlock, self).__init__()
         self.out_channels = out_channels
@@ -145,4 +144,3 @@ class GeneralPurposeDecoder(nn.Module):
             v = v * dt.unsqueeze(-1)
 
         return h, v
-

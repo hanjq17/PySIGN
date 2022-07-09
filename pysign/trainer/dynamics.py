@@ -6,7 +6,8 @@ from torch_geometric.nn import global_mean_pool
 
 
 class DynamicsTrainer(Trainer):
-    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True, rollout_step=1, save_pred=False):
+    def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True, rollout_step=1,
+                 save_pred=False):
         super(DynamicsTrainer, self).__init__(dataloaders, task, args, device, lower_is_better, verbose, test)
         self.rollout_step = rollout_step
         self.save_pred = save_pred
@@ -77,7 +78,7 @@ class DynamicsTrainer(Trainer):
                     x_true = x_true + batch_data.v_label
 
                 cur_pred.append(batch_data.x)
-                
+
                 # TODO: revise here, not a good implementation
                 batch_data.h = torch.norm(batch_data.v, dim=-1, keepdim=True)
                 loss, _, outputs = self.task(batch_data)
@@ -99,11 +100,3 @@ class DynamicsTrainer(Trainer):
             return all_graph_loss, all_pred  # [Tot_G, T], [Tot_G, T, N, 3]
         else:
             return all_graph_loss, None
-
-
-
-
-
-
-
-

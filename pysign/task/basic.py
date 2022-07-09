@@ -7,6 +7,7 @@ class BasicTask(Module):
 
     :param rep: the representation module.
     """
+
     def __init__(self, rep):
         super(BasicTask, self).__init__()
         self.rep = rep

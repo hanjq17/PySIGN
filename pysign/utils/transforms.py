@@ -44,7 +44,7 @@ class AtomOnehot(object):
             res[atom] = i
         return res
 
-    def __call__(self,data):
+    def __call__(self, data):
         # atom_type = data.atom_type
         assert hasattr(data, self.atom_type_name)
         atom_type = getattr(data, self.atom_type_name)
@@ -149,7 +149,7 @@ class SelectEdges(object):
         self.edges_between = edges_between
 
     def __call__(self, data):
-        data.edge_attr = data.edge_attr.reshape(-1,1)
+        data.edge_attr = data.edge_attr.reshape(-1, 1)
         if not self.edges_between:
             row, col = data.edge_index
             ins = data.instance
@@ -162,8 +162,8 @@ class SelectEdges(object):
 class LEP_Transform(object):
     def __call__(self, data):
         data1, data2 = data
-        data1.edge_attr = data1.edge_attr.reshape(-1,1)
-        data2.edge_attr = data2.edge_attr.reshape(-1,1)
+        data1.edge_attr = data1.edge_attr.reshape(-1, 1)
+        data2.edge_attr = data2.edge_attr.reshape(-1, 1)
         if isinstance(data1.y, str):
             data1.y = torch.FloatTensor([data1.y == 'A'])
         return data1, data2

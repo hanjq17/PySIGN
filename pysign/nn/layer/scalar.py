@@ -68,7 +68,6 @@ class EGNNLayer(nn.Module):
                 nn.Linear(input_nf, hidden_nf),
                 act_fn,
                 nn.Linear(hidden_nf, 1))
-        
 
     def edge_model(self, source, target, radial, edge_attr):
         """
@@ -143,7 +142,7 @@ class EGNNLayer(nn.Module):
         """
         row, col = edge_index
         coord_diff = coord[row] - coord[col]
-        radial = torch.sum(coord_diff**2, 1).unsqueeze(1)
+        radial = torch.sum(coord_diff ** 2, 1).unsqueeze(1)
 
         if self.normalize:
             norm = torch.sqrt(radial).detach() + self.epsilon
@@ -182,6 +181,7 @@ class RadialFieldLayer(nn.Module):
     :param edge_attr_nf: Number of input edge features, default: 0
     :param act_fn: The activation function, default: LeakyReLU
     """
+
     def __init__(self, hidden_nf=64, edge_attr_nf=0, act_fn=nn.LeakyReLU(0.2)):
         super(RadialFieldLayer, self).__init__()
         self.coord_mlp_vel = nn.Sequential(
@@ -241,4 +241,3 @@ class RadialFieldLayer(nn.Module):
         agg = unsorted_segment_mean(edge_m, row, num_segments=x.size(0))
         x_out = x + agg
         return x_out
-

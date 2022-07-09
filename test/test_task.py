@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('./')
 from pysign.dataset import NBody
 from pysign.nn.model import get_model_from_args
@@ -33,7 +34,7 @@ model_save_path = args.model_save_path
 
 class RadiusLabel(object):
     def __call__(self, data):
-        m = data.x - data.x.mean(dim=-1,keepdim=True)
+        m = data.x - data.x.mean(dim=-1, keepdim=True)
         data.y = m.norm(dim=-1).max()
         return data
 
@@ -59,7 +60,6 @@ class EnergyForce(object):
 
 
 def _prediction_test(model):
-
     dataset.transform = T.Compose([NBody_Transform, RadiusLabel()])
     datasets = dataset.get_split_by_num(n_train, n_val, n_test)
     dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size,
@@ -79,7 +79,6 @@ def _prediction_test(model):
 
 
 def _dynamics_test(model, decoding, vector_method):
-
     if vector_method == 'diff':
         decoding = None
 
@@ -99,7 +98,8 @@ def _dynamics_test(model, decoding, vector_method):
                                                               vector_method if vector_method is not None else '']))
 
     task = Prediction(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='Regression', loss='MAE',
-                      decoding=decoding, vector_method=vector_method, target='vector', dynamics=True, return_outputs=True)
+                      decoding=decoding, vector_method=vector_method, target='vector', dynamics=True,
+                      return_outputs=True)
 
     trainer = DynamicsTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True,
                               test=True, save_pred=args.save_pred)
@@ -125,7 +125,6 @@ def _dynamics_test(model, decoding, vector_method):
 
 
 def _contrastive_test(model):
-
     dataset.transform = T.Compose([NBody_Transform, PseudoPair()])
     datasets = dataset.get_split_by_num(n_train, n_val, n_test)
     dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size,
@@ -138,7 +137,8 @@ def _contrastive_test(model):
 
     args.model_save_path = os.path.join(model_save_path, 'contrastive', args.model)
 
-    task = Contrastive(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='BinaryClassification', loss='BCE',
+    task = Contrastive(rep=rep_model, output_dim=1, rep_dim=args.hidden_dim, task_type='BinaryClassification',
+                       loss='BCE',
                        return_outputs=True, dynamics=False)
     trainer = Trainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True)
 
@@ -146,7 +146,6 @@ def _contrastive_test(model):
 
 
 def _energyforce_test(model, decoding, vector_method):
-
     dataset.transform = T.Compose([NBody_Transform, EnergyForce()])
 
     datasets = dataset.get_split_by_num(n_train, n_val, n_test)
@@ -186,16 +185,14 @@ def test_task():
     for model in model_map:
 
         if model not in ['RF']:
-            print("="*5, f"Prediction Test of {model}", "="*5)
+            print("=" * 5, f"Prediction Test of {model}", "=" * 5)
             _prediction_test(model)
-            print("="*5, f"Contrastive Test of {model}", "="*5)
+            print("=" * 5, f"Contrastive Test of {model}", "=" * 5)
             _contrastive_test(model)
 
         for decoder in model_map[model]:
-            print("="*5, f"Dynamics Test of {model} & {decoder}", "="*5)
+            print("=" * 5, f"Dynamics Test of {model} & {decoder}", "=" * 5)
             _dynamics_test(model, *decoder)
             if model not in ['RF']:
-                print("="*5, f"Energy & Force Test of {model} & {decoder}", "="*5)
+                print("=" * 5, f"Energy & Force Test of {model} & {decoder}", "=" * 5)
                 _energyforce_test(model, *decoder)
-
-

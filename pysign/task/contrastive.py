@@ -12,6 +12,7 @@ class Contrastive(Prediction):
     :param output_dim: the output dimension for computing loss.
     :param rep_dim: the dimension of the representation.
     """
+
     def __init__(self, rep, output_dim, rep_dim, task_type='Regression', loss='MSE',
                  return_outputs=False, dynamics=False):
         super(Contrastive, self).__init__(rep, output_dim, rep_dim, task_type, loss,
@@ -53,5 +54,3 @@ class Contrastive(Prediction):
         else:
             outputs = {}
         return loss, {'scalar': loss}, outputs
-
-

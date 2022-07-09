@@ -2,7 +2,6 @@ from ...utils import RegistryBase
 import typing as _typing
 from torch.nn import Module
 
-
 __all__ = ['EncoderRegistry']
 
 
