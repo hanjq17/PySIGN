@@ -24,6 +24,7 @@ pyyaml
 lie-learn
 atom3d
 ```
+You can also use the `Dockerfile` in `docker` folder to build the environment.
 
 ### Quick Start
 TBD
