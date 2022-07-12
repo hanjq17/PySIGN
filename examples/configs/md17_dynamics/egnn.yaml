@@ -1,0 +1,35 @@
+data:
+  data_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/cached_datasets/md17'
+  molecule: 'aspirin'
+  seed: 1
+
+model:
+  name: 'EGNN'
+  hidden_dim: 128
+  n_layers: 4
+
+task:
+  charge_power: 2
+  max_atom_type: 10
+  max_hop: 3
+  rollout_step: 20
+  pred_step: 1
+
+trainer:
+  exp_name: 'md17_dynamics_demo'
+  model_save_path: 'saved_models'
+#  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/md17_dynamics'
+  batch_size: 64
+  seed: 1
+  epoch: 1000
+  eval_epoch: 1
+  earlystopping: 40
+  optimizer:
+    name: 'Adam'
+    lr: 0.0005
+    weight_decay: 1.0e-10
+  scheduler:
+    name: 'Plateau'
+    factor: 0.5
+    patience: 20
+  save_pred: false

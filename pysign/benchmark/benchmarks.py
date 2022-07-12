@@ -11,17 +11,19 @@ import os
 class BenchmarkQM9(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
-            args_file = 'examples/configs/qm9_config.json'
+            args_file = 'examples/configs/qm9/egnn.yaml'
         super(BenchmarkQM9, self).__init__(args_file)
-        self.dataset = DatasetRegistry.get_dataset('qm9')(root=self.args.data_path,
-                                                          task=self.args.target,
-                                                          transform=QM9_Transform(self.args.charge_power))
+        self.dataset = DatasetRegistry.get_dataset('qm9')(root=self.args.data.data_path,
+                                                          task=self.args.data.target,
+                                                          transform=QM9_Transform(self.args.task.charge_power),
+                                                          dataset_seed=self.args.data.seed,
+                                                          split=self.args.data.split)
         print('Data ready')
-        self.model_specific_args = {'node_dim': 5 * (self.args.charge_power + 1), 'edge_attr_dim': 0}
+        self.model_specific_args = {'node_dim': 5 * (self.args.task.charge_power + 1), 'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': True}
 
     def task(self, encoder):
-        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.hidden_dim,
+        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
                           task_type='Regression', loss='MAE', decoding='MLP', vector_method=None,
                           normalize=(self.dataset.mean(), self.dataset.std()), scalar_pooling='sum',
                           target='scalar', return_outputs=False, dynamics=False)
@@ -36,42 +38,41 @@ class BenchmarkQM9(Benchmark):
         return False
 
 
-@BenchmarkRegistry.register_benchmark('benchmark_md17_energy_force')
+@BenchmarkRegistry.register_benchmark('benchmark_md17_ef')
 class BenchmarkMD17(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
             if not self.dynamics:
-                args_file = 'examples/configs/md17_config.json'
+                args_file = 'examples/configs/md17_ef/egnn.yaml'
             else:
-                args_file = 'examples/configs/md17_dynamics_config.json'
+                args_file = 'examples/configs/md17_dynamics/egnn.yaml'
         super(BenchmarkMD17, self).__init__(args_file)
-        self.args.data_path = os.path.join(self.args.data_path, self.args.molecule)
+        self.args.data.data_path = os.path.join(self.args.data.data_path, self.args.data.molecule)
         if not self.dynamics:
             extra_args = {}
         else:
-            extra_args = {'vel_step': self.args.vel_step, 'pred_step': self.args.pred_step}
+            extra_args = {'pred_step': self.args.task.pred_step}
         self.dataset = DatasetRegistry.get_dataset('md17' if not self.dynamics else 'md17_dynamics')(
-            root=self.args.data_path, dataset_arg=self.args.molecule, **extra_args)
-        transform = MD17_Transform(max_atom_type=self.args.max_atom_type, charge_power=self.args.charge_power,
-                                   atom_type_name='charge', cutoff=1.6, max_hop=self.args.max_hop)
+            root=self.args.data.data_path, dataset_arg=self.args.data.molecule, **extra_args)
+        transform = MD17_Transform(max_atom_type=self.args.task.max_atom_type, charge_power=self.args.task.charge_power,
+                                   atom_type_name='charge', cutoff=1.6, max_hop=self.args.task.max_hop)
         transform.get_example(self.dataset[0])
         self.dataset.transform = transform
         print('Data ready')
-        self.model_specific_args = {'node_dim': self.args.max_atom_type * (self.args.charge_power + 1),
+        self.model_specific_args = {'node_dim': self.args.task.max_atom_type * (self.args.task.charge_power + 1),
                                     'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': False}
-        self.args.model_save_path = os.path.join(self.args.model_save_path,
-                                                 '_'.join([self.args.model, self.args.decoder]),
-                                                 self.args.molecule)
-        self.args.eval_result_path = os.path.join(self.args.eval_result_path,
-                                                  '_'.join([self.args.model, self.args.decoder]),
-                                                  self.args.molecule)
+        self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path, self.args.model.name,
+                                                         self.args.data.molecule)
+        self.args.trainer.eval_result_path = os.path.join(self.args.trainer.eval_result_path, self.args.model.name,
+                                                          self.args.data.molecule)
 
     def task(self, encoder):
-        task = Prediction(rep=encoder, rep_dim=self.args.hidden_dim, output_dim=1,
+        task = Prediction(rep=encoder, rep_dim=self.args.model.hidden_dim, output_dim=1,
                           task_type='Regression', loss='MAE', decoding='MLP', vector_method='diff',
                           normalize=(self.dataset.mean(), self.dataset.std()), scalar_pooling='sum',
-                          target=['scalar', 'vector'], loss_weight=[0.2, 0.8], return_outputs=False,
+                          target=['scalar', 'vector'],
+                          loss_weight=[self.args.task.energy_weight, self.args.task.force_weight], return_outputs=False,
                           dynamics=self.dynamics)
         return task
 
@@ -88,11 +89,11 @@ class BenchmarkMD17(Benchmark):
 class BenchmarkMD17Dynamics(BenchmarkMD17):
     def __init__(self, args_file=None):
         super(BenchmarkMD17Dynamics, self).__init__(args_file)
-        self.trainer_specific_args['rollout_step'] = self.args.rollout_step
-        self.trainer_specific_args['save_pred'] = self.args.save_pred
+        self.trainer_specific_args['rollout_step'] = self.args.task.rollout_step
+        self.trainer_specific_args['save_pred'] = self.args.trainer.save_pred
 
     def task(self, encoder):
-        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.hidden_dim,
+        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
                           task_type='Regression', loss='MAE', decoding=None, vector_method='diff',
                           scalar_pooling=None, target='vector', dynamics=self.dynamics,
                           return_outputs=True)
@@ -111,17 +112,17 @@ class BenchmarkMD17Dynamics(BenchmarkMD17):
 class BenchmarkNBodyDynamics(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
-            args_file = 'examples/configs/nbody_dynamics_config.json'
+            args_file = 'examples/configs/nbody_dynamics/egnn.yaml'
         super(BenchmarkNBodyDynamics, self).__init__(args_file)
         self.dataset = DatasetRegistry.get_dataset('nbody_dynamics')(
-            root=self.args.data_path, transform=NBody_Transform, n_particle=self.args.n_particle,
-            num_samples=self.args.num_samples, T=self.args.T, sample_freq=self.args.sample_freq,
-            num_workers=20, initial_step=self.args.initial_step, pred_step=self.args.pred_step)
+            root=self.args.data.data_path, transform=NBody_Transform, n_particle=self.args.data.n_particle,
+            num_samples=self.args.data.num_samples, T=self.args.data.T, sample_freq=self.args.data.sample_freq,
+            num_workers=20, initial_step=self.args.task.initial_step, pred_step=self.args.task.pred_step)
         self.model_specific_args = {'node_dim': 1, 'edge_attr_dim': 1}
-        self.trainer_specific_args = {'test': True, 'save_pred': self.args.save_pred}
+        self.trainer_specific_args = {'test': True, 'save_pred': self.args.trainer.save_pred}
 
     def task(self, encoder):
-        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.hidden_dim,
+        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
                           task_type='Regression', loss='MSE', decoding=None, vector_method='diff',
                           scalar_pooling=None, target='vector', dynamics=self.dynamics,
                           return_outputs=True)
@@ -145,19 +146,20 @@ class BenchmarkNBodyDynamics(Benchmark):
 class BenchmarkAtom3dLBA(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
-            args_file = 'examples/configs/atom3d_lba_config.json'
+            args_file = 'examples/configs/atom3d_lba/egnn.yaml'
         super(BenchmarkAtom3dLBA, self).__init__(args_file)
         self.model_specific_args = {'node_dim': 61, 'edge_attr_dim': 1}
 
     def get_dataset_splits(self):
         transform = SelectEdges()
         dataset_fn = DatasetRegistry.get_dataset('atom3d')
-        datasets = {_: dataset_fn(root=self.args.data_path, task='lba', split=_, dataset_arg='sequence-identity-30',
+        datasets = {_: dataset_fn(root=self.args.data.data_path, task='lba', split=_,
+                                  dataset_arg='sequence-identity-30',
                                   transform=transform) for _ in ['train', 'val', 'test']}
         return datasets
 
     def task(self, encoder):
-        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.hidden_dim,
+        task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
                           task_type='Regression', loss='MSE', decoding='MLP',
                           target='scalar', return_outputs=True, dynamics=self.dynamics)
         return task
@@ -175,19 +177,19 @@ class BenchmarkAtom3dLBA(Benchmark):
 class BenchmarkAtom3dLEP(Benchmark):
     def __init__(self, args_file=None):
         if args_file is None:
-            args_file = 'examples/configs/atom3d_lep_config.json'
+            args_file = 'examples/configs/atom3d_lep/egnn.yaml'
         super(BenchmarkAtom3dLEP, self).__init__(args_file)
         self.model_specific_args = {'node_dim': 18, 'edge_attr_dim': 1}
 
     def get_dataset_splits(self):
         transform = LEP_Transform()
         dataset_fn = DatasetRegistry.get_dataset('atom3d')
-        datasets = {_: dataset_fn(root=self.args.data_path, task='lep', split=_, dataset_arg='protein',
+        datasets = {_: dataset_fn(root=self.args.data.data_path, task='lep', split=_, dataset_arg='protein',
                                   transform=transform) for _ in ['train', 'val', 'test']}
         return datasets
 
     def task(self, encoder):
-        task = Contrastive(rep=encoder, output_dim=1, rep_dim=self.args.hidden_dim,
+        task = Contrastive(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
                            task_type='BinaryClassification', loss='BCE',
                            return_outputs=True, dynamics=self.dynamics)
         return task

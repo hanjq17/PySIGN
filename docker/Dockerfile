@@ -50,7 +50,7 @@ RUN pip install torch_scatter==2.0.7 \
                 torch-geometric==2.0.4
 # Others
 RUN pip install scikit-learn \
-                attrdict  \
+                easydict  \
                 tqdm \
                 matplotlib \
                 sympy \

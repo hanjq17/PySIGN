@@ -7,8 +7,6 @@
     "hidden_dim": 64,
     "data_path": "/apdcephfs/share_1364275/jiaqihan/atom3d/new_data",
     "model_save_path": "saved_models",
-    "seqid": 30,
-    "precomputed": false,
 
     "model": "EGNN",
     "n_layers": 4,

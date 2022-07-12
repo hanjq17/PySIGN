@@ -1,6 +1,7 @@
 from torch_geometric.datasets import QM9 as QM9_pyg
 from pysign.data import from_pyg
 import torch
+import numpy as np
 from .registry import DatasetRegistry
 
 atomrefs = {
@@ -30,7 +31,7 @@ class QM9(QM9_pyg):
     property_list = ['mu', 'alpha', 'homo', 'lumo', 'gap', 'r2', 'zpve', 'u0', 'u298', 'h298', 'g298', 'cv', 'u0_atom',
                      'u298_atom', 'h298_atom', 'g298_atom']
 
-    def __init__(self, root, task, transform=None):
+    def __init__(self, root, task, transform=None, dataset_seed=0, split='large'):
         if isinstance(task, str):
             self.task = task
             assert task in QM9.property_list
@@ -39,6 +40,8 @@ class QM9(QM9_pyg):
             self.target_idx = task
             self.task = QM9.property_list[self.target_idx]
         attrs = ['x', 'z', 'pos', 'edge_index', 'edge_attr', 'y', 'name', 'idx']
+        self.dataset_seed = dataset_seed
+        self.split = split
         super(QM9, self).__init__(root, transform=transform, pre_transform=from_pyg(attrs=attrs))
 
     def get(self, idx):
@@ -69,11 +72,10 @@ class QM9(QM9_pyg):
         super(QM9, self).process()
 
     def get_split_by_num(self, n_train, n_val, n_test):
-        n_tot = len(self)
-        import numpy as np
-        # Generate random permutation
-        np.random.seed(0)
-        data_perm = np.random.permutation(n_tot)
+
+        print('Getting split with dataset seed (numpy)', self.dataset_seed)
+        np.random.seed(self.dataset_seed)
+        data_perm = np.random.permutation(len(self))
 
         # Now use the permutations to generate the indices of the dataset splits.
         train, valid, test, extra = np.split(
@@ -84,8 +86,15 @@ class QM9(QM9_pyg):
                 'test': test_dataset}
 
     def default_split(self):
-        n_tot = len(self)
-        n_test = int(0.1 * n_tot)
-        n_train = 100000
-        n_val = n_tot - n_train - n_test
+
+        if self.split == 'large':
+            n_train = 110000
+            n_val = 10000
+            n_test = len(self) - n_train - n_val
+        else:
+            n_tot = len(self)
+            n_test = int(0.1 * n_tot)
+            n_train = 100000
+            n_val = n_tot - n_train - n_test
+
         return self.get_split_by_num(n_train=n_train, n_val=n_val, n_test=n_test)

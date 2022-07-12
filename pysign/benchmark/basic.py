@@ -1,4 +1,4 @@
-from ..utils import get_default_args, load_params, set_seed
+from ..utils import load_params, set_seed
 from ..nn.model import get_model_from_args
 from torch_geometric.loader import DataLoader
 import torch
@@ -10,9 +10,7 @@ import pickle
 class Benchmark(object):
     def __init__(self, args_file=None):
         self.args_file = args_file
-        args = get_default_args()
-        self.args = load_params(args, param_path=self.args_file)
-        set_seed(self.args.seed)
+        self.args = load_params(self.args_file)
         self.dataset = None
         self.datasets = None
         self.encoder = None
@@ -20,8 +18,8 @@ class Benchmark(object):
         self.model_specific_args = {}
         self.trainer_specific_args = {}
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if not hasattr(self.args, 'eval_result_path'):
-            self.args.eval_result_path = self.args.model_save_path
+        if not hasattr(self.args.trainer, 'eval_result_path'):
+            self.args.trainer.eval_result_path = self.args.trainer.model_save_path
 
     @property
     def dynamics(self):
@@ -42,12 +40,13 @@ class Benchmark(object):
 
     def launch(self):
         self.datasets = self.get_dataset_splits()
+        set_seed(self.args.trainer.seed)
         dataloaders = {
             split: DataLoader(self.datasets[split],
-                              batch_size=self.args.batch_size, shuffle=True if split == 'train' else False)
+                              batch_size=self.args.trainer.batch_size, shuffle=True if split == 'train' else False)
             for split in self.datasets}
-        encoder = get_model_from_args(args=self.args, dynamics=self.dynamics, **self.model_specific_args)
-        trainer = self.trainer(dataloaders=dataloaders, task=self.task(encoder), args=self.args,
+        encoder = get_model_from_args(args=self.args.model, dynamics=self.dynamics, **self.model_specific_args)
+        trainer = self.trainer(dataloaders=dataloaders, task=self.task(encoder), args=self.args.trainer,
                                device=self.device, lower_is_better=True, **self.trainer_specific_args)
         trainer.loop()
 
@@ -65,7 +64,7 @@ class Benchmark(object):
             all_loss, all_pred = trainer.evaluate_rollout_multi_system(valid=False)
             temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
             print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
-            os.makedirs(self.args.eval_result_path, exist_ok=True)
-            with open(os.path.join(self.args.eval_result_path, 'eval_result.pkl'), 'wb') as f:
+            os.makedirs(self.args.trainer.eval_result_path, exist_ok=True)
+            with open(os.path.join(self.args.trainer.eval_result_path, 'eval_result.pkl'), 'wb') as f:
                 pickle.dump((all_loss, all_pred), f)
-            print('Saved to', os.path.join(self.args.eval_result_path, 'eval_result.pkl'))
+            print('Saved to', os.path.join(self.args.trainer.eval_result_path, 'eval_result.pkl'))

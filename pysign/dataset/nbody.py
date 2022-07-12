@@ -36,13 +36,14 @@ class NBody(InMemoryDataset):
 
     def __init__(self, root, transform=None, pre_transform=None, n_particle=5, num_samples=500,
                  box_size=None, T=5000, sample_freq=100, num_workers=20,
-                 initial_step=15, pred_step=1):
+                 initial_step=15, pred_step=1, use_dataset_vel=False):
         self.n_particle = n_particle
         self.num_samples = num_samples
         self.box_size = box_size
         self.T, self.sample_freq = T, sample_freq
         self.num_workers = num_workers
         self.initial_step, self.pred_step = initial_step, pred_step
+        self.use_dataset_vel = use_dataset_vel
         assert self.initial_step - self.pred_step >= 0  # since v_input is a differential of positions
         super(NBody, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
@@ -56,9 +57,13 @@ class NBody(InMemoryDataset):
         if self.mode == 'one_step':
             data = super(NBody, self).get(idx)
             data.v_label = data.x[self.initial_step + self.pred_step] - data.x[self.initial_step]  # the label of v
-            data.v = data.x[self.initial_step] - data.x[self.initial_step - self.pred_step]  # the input of v
+            if not self.use_dataset_vel:
+                data.v = data.x[self.initial_step] - data.x[self.initial_step - self.pred_step]  # the input of v
+            else:
+                data.v = data.v[self.initial_step]
             data.x = data.x[self.initial_step]  # the input of x, [N, 3]
         elif self.mode == 'rollout':
+            assert not self.use_dataset_vel  # Currently we do not support (x, v) rollout
             data = super(NBody, self).get(idx)
             t_idx = torch.arange(self.initial_step, data.x.shape[0] - self.pred_step, self.pred_step)
             assert len(t_idx) >= self.rollout_step

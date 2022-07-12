@@ -31,7 +31,7 @@ class MD17(InMemoryDataset):
 
     available_molecules = list(molecule_files.keys())
 
-    def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None):
+    def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, dataset_seed=None):
         assert dataset_arg is not None, (
             "Please provide the desired comma separated molecule(s) through"
             f"'dataset_arg'. Available molecules are {', '.join(MD17.available_molecules)} "
@@ -47,6 +47,8 @@ class MD17(InMemoryDataset):
                 "MD17 molecules have different reference energies, "
                 "which is not accounted for during training."
             )
+
+        self.dataset_seed = dataset_seed
 
         super(MD17, self).__init__(root, transform, pre_transform)
 
@@ -102,11 +104,12 @@ class MD17(InMemoryDataset):
             torch.save((data, slices), self.processed_paths[0])
 
     def get_split_by_num(self, n_train, n_val, n_test):
-        n_tot = len(self)
-        import numpy as np
-        # Generate random permutation
-        np.random.seed(0)
-        data_perm = np.random.permutation(n_tot)
+
+        if self.dataset_seed is None:
+            np.random.seed(0)
+        else:
+            np.random.seed(self.dataset_seed)
+        data_perm = np.random.permutation(len(self))
 
         # Now use the permutations to generate the indices of the dataset splits.
         train, valid, test, extra = np.split(
@@ -126,9 +129,8 @@ class MD17(InMemoryDataset):
 @DatasetRegistry.register_dataset('md17_dynamics')
 class MD17_Dynamics(MD17):
 
-    def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, vel_step=0, pred_step=1):
-        super(MD17_Dynamics, self).__init__(root, transform, pre_transform, dataset_arg)
-        self.vel_step = vel_step
+    def __init__(self, root, transform=None, pre_transform=None, dataset_arg=None, dataset_seed=None, pred_step=1):
+        super(MD17_Dynamics, self).__init__(root, transform, pre_transform, dataset_arg, dataset_seed)
         self.pred_step = pred_step
         self.mode = 'one_step'  # or 'rollout'
         self.rollout_step = None
@@ -143,11 +145,11 @@ class MD17_Dynamics(MD17):
 
     def get(self, idx):
         if self.mode == 'one_step':
-            prev_idx = idx if idx - self.vel_step < 0 else idx - self.vel_step
+            prev_idx = idx if idx - self.pred_step < 0 else idx - self.pred_step
             next_idx = idx if idx + self.pred_step >= self.len() else idx + self.pred_step
             data, data_prev, data_next = super(MD17_Dynamics, self).get(idx), super(MD17_Dynamics, self).get(
                 prev_idx), super(MD17_Dynamics, self).get(next_idx)
-            data.v = (data.x - data_prev.x) / self.vel_step * self.pred_step
+            data.v = data.x - data_prev.x
             data.v_label = data_next.x - data.x
         elif self.mode == 'rollout':
             raise NotImplementedError()

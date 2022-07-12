@@ -1,0 +1,36 @@
+data:
+  data_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/cached_datasets/nbody'
+  n_particle: 5
+  num_samples: 1000
+  T: 5000
+  sample_freq: 100
+  seed: 1
+
+model:
+  name: 'EGNN'
+  hidden_dim: 128
+  n_layers: 4
+
+task:
+  initial_step: 15
+  pred_step: 1
+  rollout_step: 30
+
+trainer:
+  exp_name: 'nbody_dynamics_demo'
+  model_save_path: 'saved_models'
+#  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/nbody_dynamics'
+  batch_size: 128
+  seed: 1
+  epoch: 1000
+  eval_epoch: 1
+  earlystopping: 40
+  optimizer:
+    name: 'Adam'
+    lr: 0.0005
+    weight_decay: 1.0e-10
+  scheduler:
+    name: 'Plateau'
+    factor: 0.5
+    patience: 20
+  save_pred: false

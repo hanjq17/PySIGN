@@ -1,34 +1,9 @@
 import json
 import yaml
+from easydict import EasyDict
 
 
-class Args:
-    def __init__(self):
-        pass
-
-
-def get_default_args():
-    default_args = Args()
-    default_args_dict = {
-        'exp_name': 'exp',
-        'batch_size': 128,
-        'epoch': 100,
-        'seed': 1,
-        'eval_epoch': 1,
-        'lr': 5e-4,
-        'hidden_dim': 64,
-        'model': 'EGNN',
-        'n_layers': 4,
-        'dataset': 'qm9',
-        'weight_decay': 1e-6,
-        'data_dir': 'cached_datasets'
-    }
-    for k, v in default_args_dict.items():
-        setattr(default_args, k, v)
-    return default_args
-
-
-def load_params(args, param_path):
+def load_params(param_path):
     """
     load the arguments from json/yml file.
     """
@@ -41,6 +16,6 @@ def load_params(args, param_path):
 
     with open(param_path, 'r') as f:
         params = load_func(f)
-    for k, v in params.items():
-        setattr(args, k, v)
-    return args
+    params = EasyDict(params)
+
+    return params

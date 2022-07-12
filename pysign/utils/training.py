@@ -6,20 +6,21 @@ import torch
 import random
 
 
-def get_optimizer(opt, lr, weight_decay, params):
-    if opt == 'SGD':
-        return SGD(lr=lr, weight_decay=weight_decay, params=params)
-    elif opt == 'Adam':
-        return Adam(lr=lr, weight_decay=weight_decay, params=params)
+def get_optimizer(opt_args, params):
+    if opt_args.name == 'SGD':
+        return SGD(lr=opt_args.lr, weight_decay=opt_args.weight_decay, params=params)
+    elif opt_args.name == 'Adam':
+        return Adam(lr=opt_args.lr, weight_decay=opt_args.weight_decay, params=params)
     else:
-        raise NotImplementedError('Unknown optimizer', opt)
+        raise NotImplementedError('Unknown optimizer', opt_args.name)
 
 
-def get_scheduler(scheduler, opt, args):
-    if scheduler == 'Plateau':
-        return ReduceLROnPlateau(optimizer=opt, factor=0.5, patience=20, verbose=True)
+def get_scheduler(scheduler_args, opt):
+    if scheduler_args.name == 'Plateau':
+        return ReduceLROnPlateau(optimizer=opt, factor=scheduler_args.factor,
+                                 patience=scheduler_args.patience, verbose=True)
     else:
-        raise NotImplementedError('Unknown scheduler', scheduler)
+        raise NotImplementedError('Unknown scheduler', scheduler_args.name)
 
 
 def set_seed(seed):
@@ -27,6 +28,7 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    print('Set torch and numpy seeds to', seed)
 
 
 def to_numpy(stats):

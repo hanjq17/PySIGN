@@ -13,8 +13,8 @@ class Trainer(object):
         self.device = device
         self.verbose = verbose
         self.test = test
-        self.optimizer = get_optimizer(args.optimizer, args.lr, args.weight_decay, task.params)
-        self.scheduler = get_scheduler(args.scheduler, self.optimizer, args)
+        self.optimizer = get_optimizer(args.optimizer, task.params)
+        self.scheduler = get_scheduler(args.scheduler, self.optimizer)
         self.stats = StatsCollector()
         self.early_stopping = EarlyStopping(lower_is_better=lower_is_better, max_times=args.earlystopping,
                                             verbose=verbose)

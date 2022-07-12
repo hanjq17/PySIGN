@@ -2,9 +2,9 @@ import sys
 sys.path.append('./')
 from pysign.dataset import MD17
 from pysign.nn.model import get_model_from_args
-from pysign.utils import get_default_args, load_params, set_seed
-from pysign.trainer import MultiTaskTrainer
-from pysign.task import EnergyForcePrediction
+from pysign.utils import load_params, set_seed
+from pysign.trainer import Trainer
+from pysign.task import Prediction
 from pysign.utils.transforms import MD17_Transform
 from torch_geometric.loader import DataLoader
 import torch
@@ -12,33 +12,34 @@ import os
 
 torch.cuda.set_device(0)
 
-param_path = 'examples/configs/md17_config.json'
-args = get_default_args()
-args = load_params(args, param_path=param_path)
-set_seed(args.seed)
+param_path = 'examples/configs/md17_ef/egnn.yaml'
+args = load_params(param_path)
+set_seed(args.trainer.seed)
 
-transform = MD17_Transform(max_atom_type=args.max_atom_type, charge_power=args.charge_power, atom_type_name='charge',
-                           cutoff=1.6, max_hop=args.max_hop)
-base_path = os.path.join(args.data_path, args.molecule)
+transform = MD17_Transform(max_atom_type=args.task.max_atom_type, charge_power=args.task.charge_power,
+                           atom_type_name='charge', cutoff=1.6, max_hop=args.task.max_hop)
+base_path = os.path.join(args.data.data_path, args.data.molecule)
 os.makedirs(base_path, exist_ok=True)
-dataset = MD17(root=base_path, dataset_arg=args.molecule)
+dataset = MD17(root=base_path, dataset_arg=args.data.molecule)
 transform.get_example(dataset[0])
 dataset.transform = transform
 print('Data ready')
 
 datasets = dataset.default_split()
-dataloaders = {split: DataLoader(datasets[split], batch_size=args.batch_size, shuffle=True if split == 'train' else False)
-               for split in datasets}
+dataloaders = {split: DataLoader(datasets[split], batch_size=args.trainer.batch_size,
+                                 shuffle=True if split == 'train' else False) for split in datasets}
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-rep_model = get_model_from_args(node_dim=args.max_atom_type * (args.charge_power + 1), edge_attr_dim=0, args=args)
+rep_model = get_model_from_args(node_dim=args.task.max_atom_type * (args.task.charge_power + 1),
+                                edge_attr_dim=0, args=args.model)
 
-args.model_save_path = os.path.join(args.model_save_path, '_'.join([args.model, args.decoder]), args.molecule)
+args.trainer.model_save_path = os.path.join(args.trainer.model_save_path, args.model.name, args.data.molecule)
 
-task = EnergyForcePrediction(rep=rep_model, rep_dim=args.hidden_dim, decoder_type=args.decoder,
-                             mean=dataset.mean(), std=dataset.std(), loss='MAE')
-trainer = MultiTaskTrainer(dataloaders=dataloaders, task=task, args=args, device=device, lower_is_better=True, test=False)
+task = Prediction(rep=rep_model, rep_dim=args.model.hidden_dim, normalize=(dataset.mean(), dataset.std()), loss='MAE',
+                  output_dim=1, scalar_pooling='sum', decoding='MLP', vector_method='grad', target=['scalar', 'vector'],
+                  loss_weight=[0.2, 0.8])
+trainer = Trainer(dataloaders=dataloaders, task=task, args=args.trainer, device=device, lower_is_better=True, test=False)
 
 trainer.loop()
 

@@ -1,6 +1,8 @@
 import numpy as np
 from .object import Isolated, Stick, Hinge
 from tqdm import tqdm
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 __all__ = ['System']
 

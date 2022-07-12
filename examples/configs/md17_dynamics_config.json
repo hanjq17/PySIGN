@@ -19,7 +19,6 @@
     "scheduler": "Plateau",
     "eval_epoch": 1,
     "molecule": "aspirin",
-    "vel_step": 1,
     "pred_step": 1,
     "max_atom_type": 10,
     "charge_power": 2,
