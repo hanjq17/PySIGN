@@ -82,11 +82,14 @@ class SavingHandler(object):
 
     def __call__(self, epoch, metric):
         if not os.path.exists(self.save_path):
-            # os.mkdir(self.save_path)
             os.makedirs(self.save_path)
         if len(self.saved_models) >= self.max_instances:
             # pop the worst model
-            os.remove(os.path.join(self.save_path, 'epoch_' + str(self.saved_models[0][0]) + '.pth'))
+            path_to_rm = os.path.join(self.save_path, 'epoch_' + str(self.saved_models[0][0]) + '.pth')
+            try:
+                os.remove(path_to_rm)
+            except FileNotFoundError:
+                print('Model checkpoint has already been removed', path_to_rm)
             self.saved_models = self.saved_models[1:]
         self.saved_models.append((epoch, metric))
         save_name = os.path.join(self.save_path, 'epoch_' + str(epoch) + '.pth')
