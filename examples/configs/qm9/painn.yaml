@@ -1,0 +1,33 @@
+data:
+  data_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/datasets/qm9'
+  target: 'homo'
+  split: 'large'
+  seed: 1
+
+model:
+  name: 'PaiNN'
+  hidden_dim: 128
+  n_layers: 3
+  num_rbf: 20
+
+
+task:
+  charge_power: 0
+
+trainer:
+  exp_name: 'qm9_demo'
+#  model_save_path: 'saved_models'
+  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/qm9'
+  batch_size: 256
+  seed: 1
+  epoch: 1000
+  eval_epoch: 1
+  earlystopping: 40
+  optimizer:
+    name: 'Adam'
+    lr: 0.0005
+    weight_decay: 1.0e-10
+  scheduler:
+    name: 'Plateau'
+    factor: 0.9
+    patience: 5

@@ -4,14 +4,16 @@ data:
   seed: 1
 
 model:
-  name: 'EGNN'
+  name: 'ET'
   hidden_dim: 128
-  n_layers: 4
+  n_layers: 6
+  num_rbf: 32
+  num_heads: 8
 
 task:
-  charge_power: 2
+  charge_power: 0
   max_atom_type: 10
-  max_hop: 3
+  max_hop: 0
   energy_weight: 0.2
   force_weight: 0.8
 
@@ -26,10 +28,10 @@ trainer:
   earlystopping: 40
   optimizer:
     name: 'Adam'
-    lr: 0.0005
+    lr: 0.001
     weight_decay: 1.0e-10
   scheduler:
     name: 'Plateau'
-    factor: 0.5
-    patience: 20
+    factor: 0.8
+    patience: 30
   save_pred: false
