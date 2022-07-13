@@ -27,7 +27,7 @@ trainer:
   optimizer:
     name: 'Adam'
     lr: 0.0004
-    weight_decay: 1.0e-10
+    weight_decay: 0.0
   scheduler:
     name: 'Plateau'
     factor: 0.8

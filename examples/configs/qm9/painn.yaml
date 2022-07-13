@@ -29,5 +29,5 @@ trainer:
     weight_decay: 1.0e-10
   scheduler:
     name: 'Plateau'
-    factor: 0.9
+    factor: 0.5
     patience: 5
