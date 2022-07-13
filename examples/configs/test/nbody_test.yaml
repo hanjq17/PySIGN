@@ -28,6 +28,7 @@ trainer:
   seed: 0
   epoch: 1
   eval_epoch: 1
+  print_freq: 40
   earlystopping: 40
   optimizer:
     name: 'Adam'
