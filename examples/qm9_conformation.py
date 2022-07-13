@@ -41,7 +41,7 @@ all_loss, all_pred = trainer.evaluate_rollout(valid=False)
 temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
 print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
 
-out_dir = os.path.join(args.trainer.eval_result_path, args.model.name)
+out_dir = os.path.join(args.trainer.model_save_path, args.model.name)
 os.makedirs(out_dir, exist_ok=True)
 with open(os.path.join(out_dir, 'eval_result.pkl'), 'wb') as f:
     pickle.dump((all_loss, all_pred), f)

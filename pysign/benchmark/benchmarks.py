@@ -21,6 +21,10 @@ class BenchmarkQM9(Benchmark):
         print('Data ready')
         self.model_specific_args = {'node_dim': 5 * (self.args.task.charge_power + 1), 'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': True}
+        if self.args.trainer.exp_name is None:
+            self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path,
+                                                             self.args.model.name,
+                                                             self.args.data.target)
 
     def task(self, encoder):
         task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
@@ -62,10 +66,10 @@ class BenchmarkMD17(Benchmark):
         self.model_specific_args = {'node_dim': self.args.task.max_atom_type * (self.args.task.charge_power + 1),
                                     'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': False}
-        self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path, self.args.model.name,
-                                                         self.args.data.molecule)
-        self.args.trainer.eval_result_path = os.path.join(self.args.trainer.eval_result_path, self.args.model.name,
-                                                          self.args.data.molecule)
+        if self.args.trainer.exp_name is None:
+            self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path,
+                                                             self.args.model.name,
+                                                             self.args.data.molecule)
 
     def task(self, encoder):
         task = Prediction(rep=encoder, rep_dim=self.args.model.hidden_dim, output_dim=1,

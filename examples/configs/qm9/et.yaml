@@ -5,7 +5,7 @@ data:
   seed: 1
 
 model:
-  name: 'ET'
+  name: 'et'
   hidden_dim: 256
   n_layers: 8
   num_rbf: 64
@@ -16,13 +16,14 @@ task:
   charge_power: 0
 
 trainer:
-  exp_name: 'qm9_demo'
+  exp_name: null
 #  model_save_path: 'saved_models'
   model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/qm9'
   batch_size: 256
   seed: 1
   epoch: 1000
   eval_epoch: 1
+  print_freq: 200
   earlystopping: 40
   optimizer:
     name: 'Adam'

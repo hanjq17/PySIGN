@@ -11,7 +11,6 @@
     "num_steps": 5000,
     "data_path": "/data/private/kxz/cached_datasets/qm9",
     "model_save_path": "/data/private/kxz/tmp",
-    "eval_result_path": "/data/private/kxz/tmp",
     "rollout_step": 20,
     "save_pred": false,
     "earlystopping": 40,

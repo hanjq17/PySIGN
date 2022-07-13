@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from ..layer import NeighborEmbedding, act_class_mapping, EquivariantMultiHeadAttention
-from ..utils import CosineCutoff, rbf_class_mapping
-from .registry import EncoderRegistry
+from ...layer import NeighborEmbedding, act_class_mapping, EquivariantMultiHeadAttention
+from ...utils import CosineCutoff, rbf_class_mapping
+from ..registry import EncoderRegistry
 
 __all__ = ['EquivariantTransformer']
 
@@ -12,9 +12,9 @@ class EquivariantTransformer(nn.Module):
     r"""The TorchMD equivariant Transformer architecture.
 
     Args:
-        hidden_channels (int, optional): Hidden embedding size.
+        hidden_dim (int, optional): Hidden embedding size.
             (default: :obj:`128`)
-        num_layers (int, optional): The number of attention layers.
+        n_layers (int, optional): The number of attention layers.
             (default: :obj:`6`)
         num_rbf (int, optional): The number of radial basis functions :math:`\mu`.
             (default: :obj:`50`)
@@ -36,7 +36,7 @@ class EquivariantTransformer(nn.Module):
             (default: :obj:`0.0`)
         cutoff_upper (float, optional): Upper cutoff distance for interatomic interactions.
             (default: :obj:`5.0`)
-        max_z (int, optional): Maximum atomic number. Used for initializing embeddings.
+        in_node_dim (int, optional): Maximum atomic number. Used for initializing embeddings.
             (default: :obj:`100`)
         max_num_neighbors (int, optional): Maximum number of neighbors to return for a
             given node/atom when constructing the molecular graph during forward passes.
@@ -49,8 +49,8 @@ class EquivariantTransformer(nn.Module):
 
     def __init__(
             self,
-            hidden_channels=128,
-            num_layers=6,
+            hidden_dim=128,
+            n_layers=6,
             num_rbf=50,
             rbf_type="expnorm",
             trainable_rbf=True,
@@ -61,8 +61,9 @@ class EquivariantTransformer(nn.Module):
             distance_influence="both",
             cutoff_lower=0.0,
             cutoff_upper=5.0,
-            max_z=100,
+            in_node_dim=100,
             max_num_neighbors=32,
+            **kwargs
     ):
         super(EquivariantTransformer, self).__init__()
 
@@ -80,8 +81,8 @@ class EquivariantTransformer(nn.Module):
             f'Choose from {", ".join(act_class_mapping.keys())}.'
         )
 
-        self.hidden_channels = hidden_channels
-        self.num_layers = num_layers
+        self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
         self.num_rbf = num_rbf
         self.rbf_type = rbf_type
         self.trainable_rbf = trainable_rbf
@@ -92,11 +93,11 @@ class EquivariantTransformer(nn.Module):
         self.distance_influence = distance_influence
         self.cutoff_lower = cutoff_lower
         self.cutoff_upper = cutoff_upper
-        self.max_z = max_z
+        self.in_node_dim = in_node_dim
 
         act_class = act_class_mapping[activation]
 
-        self.embedding = nn.Linear(self.max_z, hidden_channels)
+        self.embedding = nn.Linear(self.in_node_dim, hidden_dim)
 
         self.distance_expansion = rbf_class_mapping[rbf_type](
             cutoff_lower, cutoff_upper, num_rbf, trainable_rbf
@@ -106,16 +107,16 @@ class EquivariantTransformer(nn.Module):
 
         self.neighbor_embedding = (
             NeighborEmbedding(
-                hidden_channels, num_rbf, cutoff_lower, cutoff_upper, self.max_z
+                hidden_dim, num_rbf, cutoff_lower, cutoff_upper, self.in_node_dim
             ).jittable()
             if neighbor_embedding
             else None
         )
 
         self.attention_layers = nn.ModuleList()
-        for _ in range(num_layers):
+        for _ in range(n_layers):
             layer = EquivariantMultiHeadAttention(
-                hidden_channels,
+                hidden_dim,
                 num_rbf,
                 distance_influence,
                 num_heads,
@@ -126,7 +127,7 @@ class EquivariantTransformer(nn.Module):
             ).jittable()
             self.attention_layers.append(layer)
 
-        self.out_norm = nn.LayerNorm(hidden_channels)
+        self.out_norm = nn.LayerNorm(hidden_dim)
 
         self.reset_parameters()
 
@@ -186,8 +187,8 @@ class EquivariantTransformer(nn.Module):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}("
-            f"hidden_channels={self.hidden_channels}, "
-            f"num_layers={self.num_layers}, "
+            f"hidden_dim={self.hidden_dim}, "
+            f"n_layers={self.n_layers}, "
             f"num_rbf={self.num_rbf}, "
             f"rbf_type={self.rbf_type}, "
             f"trainable_rbf={self.trainable_rbf}, "

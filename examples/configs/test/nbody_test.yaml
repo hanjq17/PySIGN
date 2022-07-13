@@ -10,6 +10,10 @@ model:
   name: 'EGNN'
   hidden_dim: 32
   n_layers: 2
+  # These are TFN and SE3-Tr. configs
+  num_degrees: 2
+  n_heads: 2
+  num_nlayers: 1
 
 task:
   initial_step: 5
@@ -19,7 +23,6 @@ task:
 trainer:
   exp_name: 'nbody_dynamics_demo'
   model_save_path: 'saved_models/nbody'
-  eval_result_path: "saved_models/nbodyeval"
 #  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/nbody_dynamics'
   batch_size: 2
   seed: 0

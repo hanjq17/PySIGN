@@ -4,7 +4,7 @@ data:
   seed: 1
 
 model:
-  name: 'ET'
+  name: 'et'
   hidden_dim: 128
   n_layers: 6
   num_rbf: 32
@@ -18,13 +18,14 @@ task:
   force_weight: 0.8
 
 trainer:
-  exp_name: 'md17_ef_demo'
-  model_save_path: 'saved_models'
-#  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/md17_ef'
+  exp_name: null
+#  model_save_path: 'saved_models'
+  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/md17_ef'
   batch_size: 10
   seed: 1
   epoch: 1000
   eval_epoch: 1
+  print_freq: 200
   earlystopping: 40
   optimizer:
     name: 'Adam'

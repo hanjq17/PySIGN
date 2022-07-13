@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import utils_steerable
+from . import utils_steerable
 from .fibers import Fiber, fiber2head
 from torch_geometric.utils import softmax
 from torch_scatter import scatter
