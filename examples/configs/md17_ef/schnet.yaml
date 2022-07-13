@@ -4,9 +4,9 @@ data:
   seed: 1
 
 model:
-  name: 'PaiNN'
+  name: 'SchNet'
   hidden_dim: 128
-  n_layers: 3
+  n_layers: 6
   num_rbf: 20
 
 task:
