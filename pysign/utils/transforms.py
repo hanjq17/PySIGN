@@ -125,12 +125,13 @@ class MD17_Transform(object):
         atom_type = getattr(data, self.atom_type_name)
         self.h = self.gen_atom_onehot(atom_type)
         self.edge_index, self.edge_type = self.gen_fully_connected_with_hop(data.x)
+        self.edge_attr = F.one_hot(self.edge_type, self.max_hop + 1)
         self.processed = True
 
     def __call__(self, data):
         assert self.processed
         data.h = self.h
-        data.edge_index, data.edge_type = self.edge_index, self.edge_type
+        data.edge_index, data.edge_attr = self.edge_index, self.edge_attr
         return data
 
 

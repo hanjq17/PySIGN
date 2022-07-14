@@ -29,6 +29,7 @@ class EGNN(nn.Module):
         super(EGNN, self).__init__()
         self.hidden_nf = hidden_dim
         self.n_layers = n_layers
+        self.use_vel = use_vel
         self.embedding_in = nn.Linear(in_node_dim, self.hidden_nf)
         if out_node_dim is None:
             out_node_dim = hidden_dim
@@ -64,7 +65,10 @@ class EGNN(nn.Module):
             vel = None
         h = self.embedding_in(h)
         for i in range(self.n_layers):
-            h, x, _ = self._modules["gcl_%d" % i](h, edges, x, edge_attr=edge_attr, vel=vel)
+            if self.use_vel:
+                h, x, _ = self._modules["gcl_%d" % i](h, edges, x, edge_attr=edge_attr, vel=vel)
+            else:
+                h, _, _ = self._modules["gcl_%d" % i](h, edges, x, edge_attr=edge_attr, vel=vel)
         h = self.embedding_out(h)
         data.x_pred, data.h_pred = x, h
         return data

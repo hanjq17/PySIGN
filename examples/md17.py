@@ -37,8 +37,8 @@ rep_model = get_model_from_args(node_dim=args.task.max_atom_type * (args.task.ch
 args.trainer.model_save_path = os.path.join(args.trainer.model_save_path, args.model.name, args.data.molecule)
 
 task = Prediction(rep=rep_model, rep_dim=args.model.hidden_dim, normalize=(dataset.mean(), dataset.std()), loss='MAE',
-                  output_dim=1, scalar_pooling='sum', decoding='MLP', vector_method='grad', target=['scalar', 'vector'],
-                  loss_weight=[0.2, 0.8])
+                  output_dim=1, scalar_pooling='sum', decoding='MLP', vector_method='gradient',
+                  target=['scalar', 'vector'], loss_weight=[0.2, 0.8])
 trainer = Trainer(dataloaders=dataloaders, task=task, args=args.trainer, device=device, lower_is_better=True, test=False)
 
 trainer.loop()

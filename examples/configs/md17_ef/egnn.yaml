@@ -18,10 +18,10 @@ task:
 trainer:
   exp_name: null
 #  model_save_path: 'saved_models'
-  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files/md17_ef'
+  model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files_new/md17_ef'
   batch_size: 10
   seed: 1
-  epoch: 1000
+  epoch: 1500
   eval_epoch: 1
   print_freq: 200
   earlystopping: 40
