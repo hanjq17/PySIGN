@@ -23,7 +23,7 @@ trainer:
   epoch: 1000
   eval_epoch: 1
   print_freq: 200
-  earlystopping: 40
+  earlystopping: 100
   optimizer:
     name: 'Adam'
     lr: 0.0005

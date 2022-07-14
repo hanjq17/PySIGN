@@ -21,10 +21,10 @@ trainer:
   model_save_path: '/apdcephfs/share_1364275/jiaqihan/pysign_exps/exp_files_new/md17_ef'
   batch_size: 10
   seed: 1
-  epoch: 1500
+  epoch: 3000
   eval_epoch: 1
   print_freq: 200
-  earlystopping: 40
+  earlystopping: 200
   optimizer:
     name: 'Adam'
     lr: 0.0005
@@ -32,5 +32,5 @@ trainer:
   scheduler:
     name: 'Plateau'
     factor: 0.5
-    patience: 20
+    patience: 40
   save_pred: false
