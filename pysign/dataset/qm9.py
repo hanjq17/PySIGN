@@ -52,6 +52,8 @@ class QM9(QM9_pyg):
             data.y = data.y[:, self.target_idx]
         if self.target_idx in atomrefs:
             self.substract_thermo(data)
+        if self.target_idx == 6:
+            data.y = data.y * 1000
         return data
 
     def standarize(self):
