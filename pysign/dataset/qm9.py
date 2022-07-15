@@ -2,6 +2,7 @@ from torch_geometric.datasets import QM9 as QM9_pyg
 from pysign.data import from_pyg
 import torch
 import numpy as np
+import torch.nn.functional as F
 from .registry import DatasetRegistry
 
 atomrefs = {
@@ -43,27 +44,40 @@ class QM9(QM9_pyg):
         self.dataset_seed = dataset_seed
         self.split = split
         super(QM9, self).__init__(root, transform=transform, pre_transform=from_pyg(attrs=attrs))
+        self.standarize()
 
     def get(self, idx):
         data = super(QM9, self).get(idx)
         if len(data.y.shape) == 2:
             data.y = data.y[:, self.target_idx]
+        if self.target_idx in atomrefs:
+            self.substract_thermo(data)
         return data
 
+    def standarize(self):
+        ys = torch.tensor([self.get(idx).y for idx in range(self.len())])
+        self._mean = ys.mean()
+        self._std = ys.std()
+
     def mean(self):
-        y = self.data.y
-        return float(y[:, self.target_idx].mean())
+        return self._mean
 
     def std(self):
-        y = self.data.y
-        return float(y[:, self.target_idx].std())
+        return self._std
 
     def atomref(self, max_atom_type):
         if self.target_idx in atomrefs:
             out = torch.zeros(max_atom_type)
             out[torch.tensor([1, 6, 7, 8, 9])] = torch.tensor(atomrefs[self.target_idx])
-            return out.view(-1, 1)
+            return out.view(-1)
         return None
+
+    def substract_thermo(self, data):
+        max_atom_type = 10
+        atom_onehot = F.one_hot(data.charge, max_atom_type)
+        atom_ref = self.atomref(max_atom_type)
+        thermo = (atom_onehot.sum(dim = 0) * atom_ref).sum()
+        data.y = data.y - thermo
 
     def download(self):
         super(QM9, self).download()
