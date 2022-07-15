@@ -6,21 +6,21 @@ from ..registry import EncoderRegistry
 
 @EncoderRegistry.register_encoder('RF')
 class RadialField(nn.Module):
-    def __init__(self, hidden_nf, edge_attr_nf=0, act_fn=nn.SiLU(), n_layers=4):
+    def __init__(self, hidden_dim, in_edge_dim=0, act_fn=nn.SiLU(), n_layers=4, **kwargs):
         """
         Radial Field Layer
 
-        :param hidden_nf: Number of hidden node features.
+        :param hidden_dim: Number of hidden node features.
         :param edge_attr_nf: Number of edge features, default: 0.
         :param act_fn: The activation function, default: nn.SiLU.
         :param n_layers: The number of layers, default: 4.
         """
         super(RadialField, self).__init__()
-        self.hidden_nf = hidden_nf
+        self.hidden_nf = hidden_dim
         self.n_layers = n_layers
         for i in range(n_layers):
             self.add_module("gcl_%d" % i,
-                            RadialFieldLayer(hidden_nf=hidden_nf, edge_attr_nf=edge_attr_nf, act_fn=act_fn))
+                            RadialFieldLayer(hidden_nf=hidden_dim, edge_attr_nf=in_edge_dim, act_fn=act_fn))
 
     @property
     def params(self):

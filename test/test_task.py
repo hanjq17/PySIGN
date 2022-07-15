@@ -11,7 +11,6 @@ import torch_geometric.transforms as T
 import torch
 import os
 import numpy as np
-import pickle
 
 param_path = 'examples/configs/test/nbody_test.yaml'
 args = load_params(param_path)
@@ -116,12 +115,6 @@ def _dynamics_test(model, decoding, vector_method):
         temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
         print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
 
-        out_dir = os.path.join(args.trainer.eval_result_path, args.model.name)
-        os.makedirs(out_dir, exist_ok=True)
-        with open(os.path.join(out_dir, 'eval_result.pkl'), 'wb') as f:
-            pickle.dump((all_loss, all_pred), f)
-        print('Saved to', os.path.join(out_dir, 'eval_result.pkl'))
-
 
 def _contrastive_test(model):
     dataset.transform = T.Compose([NBody_Transform, PseudoPair()])
@@ -172,7 +165,7 @@ def _energyforce_test(model, decoding, vector_method):
 def test_task():
     model_map = {
         'TFN': [('MLP', 'diff')],
-        'SE3Transformer': [('MLP', 'diff')],
+        'SE3_Tr': [('MLP', 'diff')],
         'SchNet': [('MLP', 'gradient')],
         'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
         'RF': [('MLP', 'diff')],

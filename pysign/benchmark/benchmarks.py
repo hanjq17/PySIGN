@@ -21,6 +21,10 @@ class BenchmarkQM9(Benchmark):
         print('Data ready')
         self.model_specific_args = {'node_dim': 5 * (self.args.task.charge_power + 1), 'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': True}
+        if self.args.trainer.exp_name is None:
+            self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path,
+                                                             self.args.model.name,
+                                                             self.args.data.target)
 
     def task(self, encoder):
         task = Prediction(rep=encoder, output_dim=1, rep_dim=self.args.model.hidden_dim,
@@ -53,23 +57,19 @@ class BenchmarkMD17(Benchmark):
         else:
             extra_args = {'pred_step': self.args.task.pred_step}
         self.dataset = DatasetRegistry.get_dataset('md17' if not self.dynamics else 'md17_dynamics')(
-            root=self.args.data.data_path, dataset_arg=self.args.data.molecule, **extra_args)
-        transform = MD17_Transform(max_atom_type=self.args.task.max_atom_type, charge_power=self.args.task.charge_power,
-                                   atom_type_name='charge', cutoff=1.6, max_hop=self.args.task.max_hop)
-        transform.get_example(self.dataset[0])
-        self.dataset.transform = transform
+            root=self.args.data.data_path, dataset_arg=self.args.data.molecule,
+            transform=QM9_Transform(self.args.task.charge_power), **extra_args)
         print('Data ready')
-        self.model_specific_args = {'node_dim': self.args.task.max_atom_type * (self.args.task.charge_power + 1),
-                                    'edge_attr_dim': 0}
+        self.model_specific_args = {'node_dim': 5 * (self.args.task.charge_power + 1), 'edge_attr_dim': 0}
         self.trainer_specific_args = {'test': False}
-        self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path, self.args.model.name,
-                                                         self.args.data.molecule)
-        self.args.trainer.eval_result_path = os.path.join(self.args.trainer.eval_result_path, self.args.model.name,
-                                                          self.args.data.molecule)
+        if self.args.trainer.exp_name is None:
+            self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path,
+                                                             self.args.model.name,
+                                                             self.args.data.molecule)
 
     def task(self, encoder):
         task = Prediction(rep=encoder, rep_dim=self.args.model.hidden_dim, output_dim=1,
-                          task_type='Regression', loss='MAE', decoding='MLP', vector_method='diff',
+                          task_type='Regression', loss='MAE', decoding='MLP', vector_method='gradient',
                           normalize=(self.dataset.mean(), self.dataset.std()), scalar_pooling='sum',
                           target=['scalar', 'vector'],
                           loss_weight=[self.args.task.energy_weight, self.args.task.force_weight], return_outputs=False,
@@ -89,6 +89,13 @@ class BenchmarkMD17(Benchmark):
 class BenchmarkMD17Dynamics(BenchmarkMD17):
     def __init__(self, args_file=None):
         super(BenchmarkMD17Dynamics, self).__init__(args_file)
+
+        transform = MD17_Transform(max_atom_type=self.args.task.max_atom_type, charge_power=self.args.task.charge_power,
+                                   atom_type_name='charge', cutoff=1.6, max_hop=self.args.task.max_hop)
+        transform.get_example(self.dataset[0])
+        self.dataset.transform = transform
+        self.model_specific_args = {'node_dim': self.args.task.max_atom_type * (self.args.task.charge_power + 1),
+                                    'edge_attr_dim': self.args.task.max_hop + 1}
         self.trainer_specific_args['rollout_step'] = self.args.task.rollout_step
         self.trainer_specific_args['save_pred'] = self.args.trainer.save_pred
 

@@ -92,7 +92,7 @@ def _invariance_test(model):
 def test_equivariance():
     model_map = {
         'TFN': [('MLP', 'diff')],
-        'SE3Transformer': [('MLP', 'diff')],
+        'SE3_Tr': [('MLP', 'diff')],
         'SchNet': [('MLP', 'gradient')],
         'EGNN': [('MLP', 'diff'), ('MLP', 'gradient')],
         'RF': [('MLP', 'diff')],

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from ..layer import PaiNNInteraction, PaiNNMixing, replicate_module
-from ..utils import rbf_class_mapping, CosineCutoff
-from .registry import EncoderRegistry
+from ...layer import PaiNNInteraction, PaiNNMixing, replicate_module
+from ...utils import rbf_class_mapping, CosineCutoff
+from ..registry import EncoderRegistry
 
 __all__ = ['PaiNN']
 
@@ -21,8 +21,8 @@ class PaiNN(nn.Module):
 
     def __init__(
             self,
-            n_atom_basis: int,
-            n_interactions: int,
+            hidden_dim: int,
+            n_layers: int,
             radial_basis: nn.Module = None,
             rbf_type: str = "gaussian",
             num_rbf: int = 50,
@@ -30,16 +30,17 @@ class PaiNN(nn.Module):
             cutoff_lower: float = 0.0,
             cutoff_upper: float = 5.0,
             activation: nn.Module = nn.SiLU(),
-            max_z: int = 100,
+            in_node_dim: int = 100,
             shared_interactions: bool = False,
             shared_filters: bool = False,
             epsilon: float = 1e-8,
+            **kwargs
     ):
         """
         Args:
-            n_atom_basis: number of features to describe atomic environments.
+            hidden_dim: number of features to describe atomic environments.
                 This determines the size of each embedding vector; i.e. embeddings_dim.
-            n_interactions: number of interaction blocks.
+            n_layers: number of interaction blocks.
             radial_basis: layer for expanding inter-atomic distances in a basis set
             activation: activation function
             shared_interactions: if True, share the weights across
@@ -50,41 +51,41 @@ class PaiNN(nn.Module):
         """
         super(PaiNN, self).__init__()
 
-        self.n_atom_basis = n_atom_basis
-        self.n_interactions = n_interactions
+        self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
 
-        self.radial_basis = radial_basis or \
-                            rbf_class_mapping[rbf_type](cutoff_lower=cutoff_lower, cutoff_upper=cutoff_upper,
-                                                        num_rbf=num_rbf, trainable=trainable_rbf)
+        self.radial_basis = radial_basis or rbf_class_mapping[rbf_type](cutoff_lower=cutoff_lower,
+                                                                        cutoff_upper=cutoff_upper,
+                                                                        num_rbf=num_rbf, trainable=trainable_rbf)
 
         self.cutoff_fn = CosineCutoff(cutoff_lower, cutoff_upper)
 
-        self.embedding = nn.Linear(max_z, n_atom_basis)
+        self.embedding = nn.Linear(in_node_dim, hidden_dim)
 
         self.share_filters = shared_filters
 
         if shared_filters:
             self.filter_net = nn.Linear(
-                self.radial_basis.num_rbf, 3 * n_atom_basis
+                self.radial_basis.num_rbf, 3 * hidden_dim
             )
         else:
             self.filter_net = nn.Linear(
                 self.radial_basis.num_rbf,
-                self.n_interactions * n_atom_basis * 3
+                self.n_layers * hidden_dim * 3
             )
 
         self.interactions = replicate_module(
             lambda: PaiNNInteraction(
-                n_atom_basis=self.n_atom_basis, activation=activation
+                n_atom_basis=self.hidden_dim, activation=activation
             ),
-            self.n_interactions,
+            self.n_layers,
             shared_interactions,
         )
         self.mixing = replicate_module(
             lambda: PaiNNMixing(
-                n_atom_basis=self.n_atom_basis, activation=activation, epsilon=epsilon
+                n_atom_basis=self.hidden_dim, activation=activation, epsilon=epsilon
             ),
-            self.n_interactions,
+            self.n_layers,
             shared_interactions,
         )
 
@@ -124,9 +125,9 @@ class PaiNN(nn.Module):
 
         filters = self.filter_net(phi_ij) * fcut[..., None]
         if self.share_filters:
-            filter_list = [filters] * self.n_interactions
+            filter_list = [filters] * self.n_layers
         else:
-            filter_list = torch.split(filters, 3 * self.n_atom_basis, dim=-1)
+            filter_list = torch.split(filters, 3 * self.hidden_dim, dim=-1)
 
         q = self.embedding(atomic_numbers)[:, None]
         qs = q.shape

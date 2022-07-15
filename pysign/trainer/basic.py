@@ -9,6 +9,7 @@ class Trainer(object):
     def __init__(self, dataloaders, task, args, device, lower_is_better=True, verbose=True, test=True):
         self.dataloaders: dict = dataloaders
         self.task = task.to(device)
+        print('Porting task to device:', device)
         self.args = args
         self.device = device
         self.verbose = verbose
@@ -37,7 +38,7 @@ class Trainer(object):
             tot_loss.backward()
             self.optimizer.step()
             if self.verbose:
-                if step % 40 == 0:
+                if step % self.args.print_freq == 0:
                     format_str = ''
                     if len(all_loss) > 1:  # The multi-task scenario
                         for k, v in all_loss.items():

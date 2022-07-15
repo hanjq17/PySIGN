@@ -18,8 +18,9 @@ class Benchmark(object):
         self.model_specific_args = {}
         self.trainer_specific_args = {}
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if not hasattr(self.args.trainer, 'eval_result_path'):
-            self.args.trainer.eval_result_path = self.args.trainer.model_save_path
+        if self.args.trainer.exp_name is not None:
+            self.args.trainer.model_save_path = os.path.join(self.args.trainer.model_save_path,
+                                                             self.args.trainer.exp_name)
 
     @property
     def dynamics(self):
@@ -56,7 +57,7 @@ class Benchmark(object):
 
         if not self.dynamics:
             test_result = trainer.evaluate()
-            print('Test', end=' ')
+            print('Final Test', end=' ')
             for metric in test_result:
                 print('{}: {:.6f}'.format(metric, test_result[metric]), end=' ')
             print()
@@ -64,7 +65,8 @@ class Benchmark(object):
             all_loss, all_pred = trainer.evaluate_rollout_multi_system(valid=False)
             temp_all_loss = [np.mean(all_loss[i]) for i in range(all_loss.shape[0])]
             print('Average Rollout MSE:', np.mean(temp_all_loss), np.std(temp_all_loss))
-            os.makedirs(self.args.trainer.eval_result_path, exist_ok=True)
-            with open(os.path.join(self.args.trainer.eval_result_path, 'eval_result.pkl'), 'wb') as f:
+            os.makedirs(self.args.trainer.model_save_path, exist_ok=True)
+            eval_file_path = os.path.join(self.args.trainer.model_save_path, 'eval_result.pkl')
+            with open(eval_file_path, 'wb') as f:
                 pickle.dump((all_loss, all_pred), f)
-            print('Saved to', os.path.join(self.args.trainer.eval_result_path, 'eval_result.pkl'))
+            print('Saved to', eval_file_path)
