@@ -78,7 +78,7 @@ class QM9(QM9_pyg):
         max_atom_type = 10
         atom_onehot = F.one_hot(data.charge, max_atom_type)
         atom_ref = self.atomref(max_atom_type)
-        thermo = (atom_onehot.sum(dim = 0) * atom_ref).sum()
+        thermo = (atom_onehot.sum(dim=0) * atom_ref).sum()
         data.y = data.y - thermo
 
     def download(self):

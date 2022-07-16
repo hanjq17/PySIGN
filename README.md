@@ -1,7 +1,5 @@
 # PySIGN: Science Informed Graph Networks
 
-PySIGN Team
-
 ### Key Features
 - **Complete Resources**: We incorporate diverse science-informed data resources ranging from physics to biochemistry;
 - **Widely-covered Models**: We involve state-of-the-art science-informed graph neural networks across a wide domain;
@@ -12,7 +10,7 @@ PySIGN Team
 
 ### Requirements
 ```
-torch == 1.7.1
+torch==1.7.1
 torch_scatter==2.0.7
 torch_sparse==0.6.9
 torch_cluster==1.5.8
