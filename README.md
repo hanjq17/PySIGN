@@ -1,6 +1,6 @@
 # PySIGN: Science Informed Graph Networks
 
-PySIGN Team, Tencent AI Lab & Tsinghua University
+PySIGN Team
 
 ### Key Features
 - **Complete Resources**: We incorporate diverse science-informed data resources ranging from physics to biochemistry;
