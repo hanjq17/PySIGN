@@ -10,8 +10,7 @@ class SE3Transformer(nn.Module):
 
     def __init__(self, n_layers: int, in_node_dim: int,
                  hidden_dim: int, num_nlayers: int = 1, num_degrees: int = 4,
-                 in_edge_dim: int = 4, div: float = 4, pooling: str = 'avg',
-                 n_heads: int = 1, use_vel: bool = False, **kwargs):
+                 in_edge_dim: int = 4, div: float = 4, n_heads: int = 1, use_vel: bool = False, **kwargs):
         super().__init__()
         # Build the network
         self.num_layers = n_layers
@@ -20,7 +19,6 @@ class SE3Transformer(nn.Module):
         self.num_degrees = num_degrees
         self.edge_dim = in_edge_dim
         self.div = div
-        self.pooling = pooling
         self.n_heads = n_heads
         self.use_vel = use_vel
 
