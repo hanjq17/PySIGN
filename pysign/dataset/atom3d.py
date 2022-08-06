@@ -1,18 +1,22 @@
 import numpy as np
+import pandas as pd
 import os
 import torch
 from tqdm import tqdm
+import atom3d.util.graph as gr
 from atom3d.util.transforms import prot_graph_transform, mol_graph_transform, PairedGraphTransform
 from atom3d.datasets import LMDBDataset
 from torch_geometric.data import Data, Batch, InMemoryDataset
 from torch_geometric.data.separate import separate
 import subprocess
+import scipy
 import scipy.spatial as ss
 import os.path as osp
 import copy
 from joblib import Parallel, delayed
 from pysign.data import from_pyg
 from .registry import DatasetRegistry
+from .pip import neighbors as nb
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
@@ -138,6 +142,75 @@ class GNNTransformLBA(object):
         return combined_graph
 
 
+# handling protein interface prediction (PIP) dataset
+class GNNTransformPIP(object):
+
+    """
+    The processing logic are mostly the same as the official implementation at:
+    https://github.com/drorlab/atom3d/blob/master/examples/ppi/gnn/data.py
+    """
+
+    def __init__(self, residue_level=False, backbone_only=False):
+        self.residue_level = residue_level
+        self.backbone_only = backbone_only
+
+    def __call__(self, item):
+        neighbors = item['atoms_neighbors']
+        pairs = item['atoms_pairs']
+
+        graph_list1, graph_list2 = [], []
+        for i, (ensemble_name, target_df) in enumerate(pairs.groupby(['ensemble'])):
+            sub_names, (bound1, bound2, _, _) = nb.get_subunits(target_df)
+            positives = neighbors[neighbors.ensemble0 == ensemble_name]
+            negatives = nb.get_negatives(positives, bound1, bound2)
+            negatives['label'] = 0
+            labels = self.create_labels(positives, negatives, num_pos=10, neg_pos_ratio=1)
+
+            for index, row in labels.iterrows():
+                label = float(row['label'])
+                chain_res1 = row[['chain0', 'residue0']].values
+                chain_res2 = row[['chain1', 'residue1']].values
+                graph1 = self.df_to_graph(bound1, chain_res1, label)
+                graph2 = self.df_to_graph(bound2, chain_res2, label)
+                if (graph1 is None) or (graph2 is None):
+                    continue
+                graph_list1.append(graph1)
+                graph_list2.append(graph2)
+        
+        return graph_list1, graph_list2
+
+    def create_labels(self, positives, negatives, num_pos, neg_pos_ratio):
+        frac = min(1, num_pos / positives.shape[0])
+        positives = positives.sample(frac=frac)
+        n = positives.shape[0] * neg_pos_ratio
+        negatives = negatives.sample(n, random_state=0, axis=0)
+        labels = pd.concat([positives, negatives])[['chain0', 'residue0', 'chain1', 'residue1', 'label']]
+        return labels
+
+    def df_to_graph(self, struct_df, chain_res, label):
+        """
+        Extracts atoms within 30A of CA atom and computes graph
+        """
+        chain, resnum = chain_res
+        res_df = struct_df[(struct_df.chain == chain) & (struct_df.residue == resnum)]
+        if 'CA' not in res_df.name.tolist():
+            return None
+        ca_pos = res_df[res_df['name'] == 'CA'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
+
+        kd_tree = scipy.spatial.KDTree(struct_df[['x', 'y', 'z']].to_numpy())
+        graph_pt_idx = kd_tree.query_ball_point(ca_pos, r=30.0, p=2.0)
+        graph_df = struct_df.iloc[graph_pt_idx].reset_index(drop=True)
+        ca_idx = np.where((graph_df.chain == chain) & (graph_df.residue == resnum) & (graph_df.name == 'CA'))[0]
+        if len(ca_idx) > 0:
+            return None
+
+        node_feats, edge_index, edge_feats, pos = gr.prot_df_to_graph(graph_df)
+        data = Data(node_feats, edge_index, edge_feats, y=label, pos=pos)
+        data.ca_idx = torch.LongTensor(ca_idx)
+        data.n_nodes = data.num_nodes
+        return data
+
+
 def iter_samples(lmdb, idx):
     return lmdb[idx]
 
@@ -160,7 +233,8 @@ class Atom3DDataset(InMemoryDataset):
     See http://www.quantum-machine.org/gdml/#datasets for details.
     """
 
-    multi_graph_tasks = ['lep']
+    multi_graph_tasks = ['lep', 'pip']
+    one_to_many_tasks = ['pip']
 
     def __init__(self, root, task, split, transform=None, pre_transform=None, dataset_arg=None, num_workers=1):
 
@@ -220,6 +294,8 @@ class Atom3DDataset(InMemoryDataset):
             pre_transform = GNNTransformLEP()
         elif name == "lba":
             pre_transform = GNNTransformLBA()
+        elif name == "pip":
+            pre_transform = GNNTransformPIP()
         else:
             raise NotImplementedError('Unknown task', name)
         return pre_transform
@@ -249,7 +325,7 @@ class Atom3DDataset(InMemoryDataset):
             else:
                 print(f'specified split {split} not available. Possible values are "random".')
                 link = ""
-        elif name == 'ppi':
+        elif name == 'pip':
             if split is None:
                 link = 'https://zenodo.org/record/4911102/files/PPI-raw.tar.gz?download=1'
             elif split == 'DIPS':
@@ -340,7 +416,8 @@ class Atom3DDataset(InMemoryDataset):
         out_path = self.raw_dir
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        cmd = f"wget {link} -O {out_path}/{name}"
+        # cmd = f"wget {link} -O {out_path}/{name}"
+        cmd = f"wget {link} -O {out_path}/{name} --no-check-certificate"   # insecure connection
         subprocess.call(cmd, shell=True)
         cmd2 = f"tar xzvf {out_path}/{name} -C {out_path}"
         subprocess.call(cmd2, shell=True)
@@ -348,15 +425,22 @@ class Atom3DDataset(InMemoryDataset):
     def process(self):
         data_dir = self.lmdb_file_dir
         save_dir = self.processed_dir
+        one_to_many = self.task in Atom3DDataset.one_to_many_tasks
         if self.task in Atom3DDataset.multi_graph_tasks:
             for split in ['train', 'val', 'test']:
                 print(f"Preprocessing {split} data for {self.task} task ...")
                 dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
                 samples1, samples2 = [], []
-                for i, item in enumerate(tqdm(dataset)):
-                    item1, item2 = item
-                    samples1.append(item1)
-                    samples2.append(item2)
+                if one_to_many:
+                    for i, item_list in enumerate(tqdm(dataset)):
+                        item_list1, item_list2 = item_list
+                        samples1.extend(item_list1)
+                        samples2.extend(item_list2)
+                else:
+                    for i, item in enumerate(tqdm(dataset)):
+                        item1, item2 = item
+                        samples1.append(item1)
+                        samples2.append(item2)
                 data1, slices1 = self.collate(samples1)
                 data2, slices2 = self.collate(samples2)
                 torch.save(((data1, data2), (slices1, slices2)), osp.join(save_dir, f'{split}.pt'))
@@ -365,8 +449,12 @@ class Atom3DDataset(InMemoryDataset):
                 print(f"Preprocessing {split} data for {self.task} task ...")
                 dataset = LMDBDataset(os.path.join(data_dir, split), transform=self.pre_transform)
                 samples = []
-                for i, item in enumerate(tqdm(dataset)):
-                    samples.append(item)
+                if one_to_many:
+                    for i, item_list in enumerate(tqdm(dataset)):
+                        samples.extend(item_list)
+                else:
+                    for i, item in enumerate(tqdm(dataset)):
+                        samples.append(item)
                 # samples = get_preprocessed_list(dataset,self.num_workers)
                 data, slices = self.collate(samples)
                 torch.save((data, slices), osp.join(save_dir, f'{split}.pt'))
@@ -374,4 +462,4 @@ class Atom3DDataset(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    dataset = Atom3DDataset('cached_datasets/atom3d', 'lep', 'train', dataset_arg='protein')
+    dataset = Atom3DDataset('/data/private/kxz/cached_datasets/atom3d', 'pip', 'train', dataset_arg='protein')
