@@ -1,0 +1,19 @@
+{
+    "exp_name": "PIP",
+    "batch_size": 2,
+    "epoch": 20,
+    "seed": 1,
+    "lr": 0.001,
+    "hidden_dim": 32,
+    "data_path": "/data/private/kxz/cached_datasets/atom3d",
+    "model_save_path": "saved_models",
+    "precomputed": false,
+
+    "model": "EGNN",
+    "n_layers": 2,
+    "earlystopping": 10,
+    "weight_decay": 1e-10,
+    "optimizer": "Adam",
+    "scheduler": "Plateau",
+    "eval_epoch": 1
+}

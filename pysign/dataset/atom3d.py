@@ -201,7 +201,7 @@ class GNNTransformPIP(object):
         graph_pt_idx = kd_tree.query_ball_point(ca_pos, r=30.0, p=2.0)
         graph_df = struct_df.iloc[graph_pt_idx].reset_index(drop=True)
         ca_idx = np.where((graph_df.chain == chain) & (graph_df.residue == resnum) & (graph_df.name == 'CA'))[0]
-        if len(ca_idx) > 0:
+        if not len(ca_idx) > 0:
             return None
 
         node_feats, edge_index, edge_feats, pos = gr.prot_df_to_graph(graph_df)
